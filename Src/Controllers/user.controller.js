@@ -27,7 +27,7 @@ export const FetchUsers = async (req, res) => {
       role: { $ne: "SUPER ADMIN" },
     };
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     if (req.query.status) filters.status = req.query.status;
     const totalUsers = await userModal.countDocuments(filters);

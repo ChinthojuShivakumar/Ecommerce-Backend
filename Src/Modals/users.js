@@ -36,5 +36,6 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+userSchema.index({ deletedAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
 const userModal = mongoose.model("Users", userSchema);
 export default userModal;

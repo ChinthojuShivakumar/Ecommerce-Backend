@@ -12,7 +12,6 @@ export const FileUpload = (options) => {
   }
   const RequiredFields = [
     "fieldName",
-    "required",
     "ALLOWED_FILE_TYPE",
     "FILE_SIZE",
     "UPLOAD_PATH",

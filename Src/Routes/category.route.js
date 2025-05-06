@@ -1,5 +1,10 @@
 import express from "express";
-import { CreateCategory } from "../Controllers/category.controller.js";
+import {
+  CreateCategory,
+  DeleteCategory,
+  FetchCategoryList,
+  UpdateCategory,
+} from "../Controllers/category.controller.js";
 import { FileUpload } from "../../Uploads/multercategory.js";
 
 const UPLOAD_PATH = "Public/categories";
@@ -18,6 +23,19 @@ const CategoryRoute = express.Router();
 
 // CategoryRoute.route("/category").post()
 
-CategoryRoute.post("/create", FileUpload(FilePayload), CreateCategory);
+CategoryRoute.post("/category", FileUpload(FilePayload), CreateCategory);
+CategoryRoute.get("/category", FetchCategoryList);
+CategoryRoute.put(
+  "/category/:_id",
+  FileUpload({
+    fieldName: "image",
+    required: false,
+    ALLOWED_FILE_TYPE: ALLOWED_IMAGE_FILES,
+    FILE_SIZE: FILE_SIZE,
+    UPLOAD_PATH: UPLOAD_PATH,
+  }),
+  UpdateCategory
+);
+CategoryRoute.delete("/category/:_id", DeleteCategory);
 
 export default CategoryRoute;

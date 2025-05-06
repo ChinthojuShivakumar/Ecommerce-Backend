@@ -1,21 +1,28 @@
 import mongoose from "mongoose";
 
-const categorySchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
+const categorySchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    image: {
+      type: String,
+      required: true,
+    },
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
-  image: {
-    type: String,
-    required: true,
-  },
-  deleted: {
-    type: Boolean,
-  },
-  deletedAt: {
-    type: Date,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 categorySchema.index(
   { deletedAt: 1 },
