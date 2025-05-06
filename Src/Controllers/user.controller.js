@@ -22,11 +22,25 @@ export const CreateUser = async (req, res) => {
 
 export const FetchUsers = async (req, res) => {
   try {
-    const userList = await userModal.find({ isDeleted: false });
+    const filters = {
+      isDeleted: false,
+    };
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+    if (req.query.status) filters.status = req.query.status;
+    const totalUsers = await userModal.countDocuments(filters);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    const userList = await userModal.find(filters).skip(skip).limit(limit);
     return res.status(200).json({
       message: "User Fetched Successfully :)",
       success: true,
       userList: userList,
+      page: page,
+      limit: limit,
+      totalPages: totalPages,
+      totalUsers: totalUsers,
     });
   } catch (error) {
     return res.status(500).json({ error: error });
