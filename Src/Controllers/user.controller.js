@@ -24,6 +24,7 @@ export const FetchUsers = async (req, res) => {
   try {
     const filters = {
       isDeleted: false,
+      role: { $ne: "SUPER ADMIN" },
     };
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
