@@ -31,6 +31,8 @@ export const FileUpload = (options) => {
     ALLOWED_FILE_TYPE,
     FILE_SIZE,
     UPLOAD_PATH,
+    multiple = false, // ✅ Add this line
+    maxCount = 5,
   } = options;
   const FileFilter = (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -65,14 +67,21 @@ export const FileUpload = (options) => {
   });
 
   return (req, res, next) => {
-    upload.single(fieldName)(req, res, function (err) {
+    const uploader = multiple
+      ? upload.array(fieldName, maxCount)
+      : upload.single(fieldName);
+
+    uploader(req, res, (err) => {
       if (err instanceof multer.MulterError || err) {
         return res.status(400).json({ message: err.message });
       }
-      if (required && !req.file) {
-        return res
-          .status(400)
-          .json({ message: `File upload for "${fieldName}" is required.` });
+      if (
+        required &&
+        ((multiple && !req.files?.length) || (!multiple && !req.file))
+      ) {
+        return res.status(400).json({
+          message: `File upload for "${fieldName}" is required.`,
+        });
       }
       next();
     });

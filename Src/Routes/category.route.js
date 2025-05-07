@@ -17,6 +17,7 @@ const FilePayload = {
   ALLOWED_FILE_TYPE: ALLOWED_IMAGE_FILES,
   FILE_SIZE: FILE_SIZE,
   UPLOAD_PATH: UPLOAD_PATH,
+  multiple: false,
 };
 
 const CategoryRoute = express.Router();
@@ -33,6 +34,7 @@ CategoryRoute.put(
     ALLOWED_FILE_TYPE: ALLOWED_IMAGE_FILES,
     FILE_SIZE: FILE_SIZE,
     UPLOAD_PATH: UPLOAD_PATH,
+    multiple: false,
   }),
   UpdateCategory
 );
