@@ -8,6 +8,7 @@ import userRoutes from "./Src/Routes/user.route.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import productRoute from "./Src/Routes/product.route.js";
+import bookingRoute from "./Src/Routes/booking.route.js";
 
 dotenv.config();
 
@@ -26,15 +27,13 @@ app.use(
   "/categories",
   express.static(path.join(__dirname, "Public/categories"))
 );
-app.use(
-  "/products",
-  express.static(path.join(__dirname, "Public/products"))
-);
+app.use("/products", express.static(path.join(__dirname, "Public/products")));
 
 app.use("/v1", CategoryRoute);
 app.use("/v1", userRoutes);
 app.use("/v1", productRoute);
+app.use("/v1", bookingRoute);
 
 app.listen(process.env.TEST_PORT, (req, res) => {
-  console.log("serverS is running " + process.env.TEST_PORT);
+  console.log("server is running " + process.env.TEST_PORT);
 });
