@@ -39,6 +39,10 @@ const productSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
 });
 productSchema.index(
   { deletedAt: 1 },

@@ -28,7 +28,7 @@ app.use(
 );
 app.use(
   "/products",
-  express.static(path.join(__dirname, "Public/categories"))
+  express.static(path.join(__dirname, "Public/products"))
 );
 
 app.use("/v1", CategoryRoute);
