@@ -25,12 +25,14 @@ export const fetchBookingList = async (req, res) => {
     const page = parseInt(req.query.page);
     const limit = parseInt(req.query.limit);
     const skip = (page - 1) * limit;
-    const totalBookings = await bookingModal.countDocuments({
+    const filters = {
       deleted: false,
-    });
+    };
+    if (req.query.status) filters.status = req.query.status;
+    const totalBookings = await bookingModal.countDocuments(filters);
     const totalPages = Math.ceil(totalBookings / limit);
     const bookingList = await bookingModal
-      .find({ deleted: false })
+      .find(filters)
       .skip(skip)
       .limit(limit)
       .select("-deleted -deletedAt")
