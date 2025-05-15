@@ -33,7 +33,7 @@ productRoute.put(
     ALLOWED_FILE_TYPE: ALLOWED_IMAGE_FILES,
     FILE_SIZE: FILE_SIZE,
     UPLOAD_PATH: UPLOAD_PATH,
-    multiple: false,
+    multiple: true,
   }),
   updateProduct
 );

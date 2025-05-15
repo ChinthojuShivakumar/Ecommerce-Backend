@@ -2,6 +2,7 @@ import productModal from "../Modals/products.js";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import categoryModal from "../Modals/category.js";
 dotenv.config();
 
 export const createProduct = async (req, res) => {
@@ -91,15 +92,33 @@ export const fetchProducts = async (req, res) => {
     const page = parseInt(req.query.page);
     const limit = parseInt(req.query.limit);
     const skip = (page - 1) * limit;
-    const totalCategories = await productModal.countDocuments({
+    const filters = {
       deleted: false,
-    });
+    };
+    if (req.query.category) {
+      const findCategory = await categoryModal.findOne({
+        name: req.query.category,
+      });
+      if (findCategory) {
+        filters.category = findCategory._id;
+      } else {
+        return res
+          .status(404)
+          .json({ message: "Category not found", success: false });
+      }
+    }
+    const totalCategories = await productModal.countDocuments(filters);
     const totalPages = Math.ceil(totalCategories / limit);
     const productList = await productModal
-      .find({ deleted: false })
+      .find(filters)
       .skip(skip)
+      .populate({
+        path: "category",
+        select: "_id name",
+      })
       .limit(limit)
       .select("-deleted -deletedAt");
+
     return res.status(200).json({
       message: "products fetched successfully",
       success: true,
@@ -108,6 +127,7 @@ export const fetchProducts = async (req, res) => {
       totalCategories,
       page: page,
       limit: limit,
+      filters,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
