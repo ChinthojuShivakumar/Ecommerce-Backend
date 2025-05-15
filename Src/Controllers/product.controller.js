@@ -6,7 +6,10 @@ dotenv.config();
 
 export const createProduct = async (req, res) => {
   try {
-    const findProduct = await productModal.findOne({ name: req.body.name });
+    const findProduct = await productModal.findOne({
+      name: req.body.name,
+      deleted: false,
+    });
     if (findProduct) {
       return res
         .status(400)
@@ -17,6 +20,12 @@ export const createProduct = async (req, res) => {
       const FileName = file.filename;
       return `${process.env.TEST_IMAGE_URL}/products/${FileName}`;
     });
+    if (
+      req.body.specifications &&
+      typeof req.body.specifications === "string"
+    ) {
+      req.body.specifications = JSON.parse(req.body.specifications);
+    }
     const newProduct = new productModal({ ...req.body, images: convertToURL });
     await newProduct.save();
     return res.status(201).json({
@@ -31,7 +40,10 @@ export const createProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const findProduct = await productModal.findOne({ _id: req.params._id });
+    const findProduct = await productModal.findOne({
+      _id: req.params._id,
+      deleted: false,
+    });
     if (!findProduct) {
       return res
         .status(400)
@@ -44,6 +56,21 @@ export const updateProduct = async (req, res) => {
           return `${process.env.TEST_IMAGE_URL}/products/${FileName}`;
         })
       : req.body.images;
+    if (
+      req.body.specifications &&
+      typeof req.body.specifications === "string"
+    ) {
+      req.body.specifications = JSON.parse(req.body.specifications);
+    }
+
+    if (
+      req.body.specifications &&
+      typeof req.body.specifications === "object"
+    ) {
+      req.body.specifications = new Map(
+        Object.entries(req.body.specifications)
+      );
+    }
     const newProduct = await productModal.updateOne(
       { _id: req.params._id },
       { ...req.body, images: convertToURL }

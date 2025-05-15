@@ -43,6 +43,15 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
+  highlights: [
+    {
+      type: String,
+    },
+  ],
+  specifications: {
+    type: Map,
+    of: String,
+  },
 });
 productSchema.index(
   { deletedAt: 1 },
