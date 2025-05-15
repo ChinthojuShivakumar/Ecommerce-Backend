@@ -1,0 +1,42 @@
+import express from "express";
+import {
+  createProduct,
+  deleteProduct,
+  fetchProducts,
+  updateProduct,
+} from "../Controllers/product.controller.js";
+import { FileUpload } from "../../Uploads/multercategory.js";
+
+const productRoute = express.Router();
+
+const UPLOAD_PATH = "Public/products";
+const ALLOWED_IMAGE_FILES = /jpeg|jpg|png|webp/;
+const FILE_SIZE = 5 * 1024 * 1024;
+
+const FilePayload = {
+  fieldName: "image",
+  required: true,
+  ALLOWED_FILE_TYPE: ALLOWED_IMAGE_FILES,
+  FILE_SIZE: FILE_SIZE,
+  UPLOAD_PATH: UPLOAD_PATH,
+  multiple: true,
+  maxCount: 5,
+};
+
+productRoute.post("/product", FileUpload(FilePayload), createProduct);
+productRoute.get("/product", fetchProducts);
+productRoute.put(
+  "/product/:_id",
+  FileUpload({
+    fieldName: "image",
+    required: false,
+    ALLOWED_FILE_TYPE: ALLOWED_IMAGE_FILES,
+    FILE_SIZE: FILE_SIZE,
+    UPLOAD_PATH: UPLOAD_PATH,
+    multiple: true,
+  }),
+  updateProduct
+);
+productRoute.delete("/product/:_id", deleteProduct);
+
+export default productRoute;
