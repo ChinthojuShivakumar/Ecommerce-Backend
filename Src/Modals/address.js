@@ -31,7 +31,7 @@ const addressSchema = new mongoose.Schema(
     },
     addressType: {
       type: String,
-      enum: ["Home", "Office", "Others"],
+      enum: ["Home", "Work", "Others"],
     },
     phoneNumber: {
       type: Number,
@@ -40,6 +40,10 @@ const addressSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+    },
+    isDefault: {
+      type: Boolean,
+      default: false,
     },
     deleted: {
       type: Boolean,
