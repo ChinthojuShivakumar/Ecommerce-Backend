@@ -14,16 +14,9 @@ const addressSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    district: {
+    area: {
       type: String,
-      required: true,
-    },
-    mandala: {
-      type: String,
-      required: true,
-    },
-    village: {
-      type: String,
+      require: true,
     },
     pincode: {
       type: Number,
