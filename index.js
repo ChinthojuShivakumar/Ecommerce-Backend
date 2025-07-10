@@ -9,6 +9,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import productRoute from "./Src/Routes/product.route.js";
 import bookingRoute from "./Src/Routes/booking.route.js";
+import addressRoute from "./Src/Routes/address.route.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/v1", CategoryRoute);
 app.use("/v1", userRoutes);
 app.use("/v1", productRoute);
 app.use("/v1", bookingRoute);
+app.use("/v1", addressRoute);
 
 app.listen(process.env.TEST_PORT, (req, res) => {
   console.log("server is running " + process.env.TEST_PORT);
