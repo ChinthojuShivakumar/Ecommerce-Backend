@@ -21,7 +21,9 @@ export const fetchAddress = async (req, res) => {
       deleted: false,
     };
     if (userId) filters.userId = userId;
-    const addressList = await addressModal.find(filters);
+    const addressList = await addressModal
+      .find(filters)
+      .sort({ isDefault: -1 });
     return res.status(200).json({
       message: "address fetched successfully",
       success: true,
@@ -49,13 +51,11 @@ export const updateAddress = async (req, res) => {
       { _id: _id },
       { $set: { ...req.body } }
     );
-    return res
-      .status(202)
-      .json({
-        success: true,
-        message: "address updated successfully",
-        updatedData,
-      });
+    return res.status(202).json({
+      success: true,
+      message: "address updated successfully",
+      updatedData,
+    });
   } catch (error) {
     return res.status(500).json({ message: error, success: false });
   }
