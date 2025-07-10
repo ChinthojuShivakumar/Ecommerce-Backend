@@ -33,14 +33,22 @@ const addressSchema = new mongoose.Schema(
       type: String,
       enum: ["Home", "Office", "Others"],
     },
+    phoneNumber: {
+      type: Number,
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
     deleted: {
       type: Boolean,
       default: false,
     },
     deletedAt: {
-        type: Date,
-        default: null
-    }
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
