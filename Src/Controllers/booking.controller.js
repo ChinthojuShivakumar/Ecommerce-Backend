@@ -66,7 +66,7 @@ export const createBooking = async (req, res) => {
       const newBooking = new bookingModal({ ...req.body });
       return res.status(201).json({
         success: true,
-        message: "Payment link created",
+        message: "Payment link created..!",
 
         booking: newBooking,
         paymentLink: payLink.data.link_url,
