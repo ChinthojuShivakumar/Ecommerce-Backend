@@ -5,7 +5,7 @@ import productModal from "../Modals/products.js";
 
 export const createBooking = async (req, res) => {
   try {
-    const { totalPrice, productId, userId } = req.body;
+    const { totalPrice, productId, userId, paymentMode, quantity } = req.body;
     const expirationTime = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     const findUser = await userModal.findOne({
@@ -23,6 +23,24 @@ export const createBooking = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "product not found payment failed :(",
+      });
+    }
+
+    if (paymentMode === "cod") {
+      const newBooking = await bookingModal.create({
+        productId,
+        userId,
+        quantity,
+        totalPrice,
+        paymentMode,
+        status: "CONFIRMED",
+        orderId: `COD-${Date.now()}`,
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: "Order placed with Cash on Delivery!",
+        booking: newBooking,
       });
     }
 
@@ -63,11 +81,15 @@ export const createBooking = async (req, res) => {
     );
 
     if (payLink.status == 200) {
-      const newBooking = new bookingModal({ ...req.body });
+      const newBooking = new bookingModal({
+        ...req.body,
+        orderId: payLink.data.link_id,
+      });
+      await newBooking.save();
       return res.status(201).json({
         success: true,
         message: "Payment link created..!",
-
+        paymentFullData: payLink.data,
         booking: newBooking,
         paymentLink: payLink.data.link_url,
       });
@@ -176,10 +198,10 @@ export const verifyPayment = async (req, res) => {
         "x-client-secret": process.env.TEST_X_CLIENT_SECRET,
         "x-api-version": "2023-08-01",
       },
-    };
+    }; 
 
     const checkStatus = await axios.get(
-      `${TEST_VERIFY_PAYMENT_URL}/${orderId}`,
+      `${process.env.TEST_VERIFY_PAYMENT_URL}/${orderId}`,
       config
     );
     console.log(checkStatus?.data);
@@ -188,7 +210,7 @@ export const verifyPayment = async (req, res) => {
       // Correcting the filter parameter to be an object
       const paymentData = await bookingModal.findOneAndUpdate(
         { orderId }, // Filter by orderId field (an object)
-        { paymentStatus: checkStatus?.data?.order_status }, // Update the payment status
+        { status: checkStatus?.data?.link_status }, // Update the payment status
         { new: true }
       );
 
