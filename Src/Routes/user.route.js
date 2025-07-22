@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  changeUserStatus,
   CreateUser,
   DeleteUser,
   FetchUsers,
@@ -13,4 +14,6 @@ userRoutes.get("/user", FetchUsers);
 userRoutes.put("/user/:_id", UpdateUser);
 userRoutes.delete("/user/:_id", DeleteUser);
 
-export default userRoutes
+userRoutes.post("/user/deactivate/:_id", changeUserStatus);
+
+export default userRoutes;
