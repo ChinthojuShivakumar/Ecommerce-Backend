@@ -78,14 +78,14 @@ export const updateCart = async (req, res) => {
 
     const recalculatedCart = await calculateCart(cartWithProducts.productList);
 
-    cartWithProducts.productList = recalculatedCart.items;
-    cartWithProducts.totalPrice = recalculatedCart.totalPrice;
-    cartWithProducts.discountAmount = recalculatedCart.discountAmount;
-    cartWithProducts.discountPercent = recalculatedCart.discountPercent;
-    cartWithProducts.finalPrice = recalculatedCart.finalPrice;
-    cartWithProducts.shippingPrice = recalculatedCart.shippingPrice;
+    // cartWithProducts.productList = recalculatedCart.items;
+    // cartWithProducts.totalPrice = recalculatedCart.totalPrice;
+    // cartWithProducts.discountAmount = recalculatedCart.discountAmount;
+    // cartWithProducts.discountPercent = recalculatedCart.discountPercent;
+    // cartWithProducts.finalPrice = recalculatedCart.finalPrice;
+    // cartWithProducts.shippingPrice = recalculatedCart.shippingPrice;
 
-    console.log(recalculatedCart);
+    // console.log(recalculatedCart);
 
     await cartWithProducts.save();
 
@@ -93,7 +93,7 @@ export const updateCart = async (req, res) => {
       success: false,
       message: "cart updated successfully",
 
-      cart: recalculatedCart,
+      cart: cartWithProducts,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -101,11 +101,9 @@ export const updateCart = async (req, res) => {
 };
 
 const calculateCart = async (productList, paymentMethod) => {
-  // console.log(productList);
-
   const productIds = productList.map((p) => p.product);
+
   const products = await productModal.find({ _id: { $in: productIds } });
-  //   console.log(products);
 
   let totalPrice = 0;
 
@@ -116,15 +114,13 @@ const calculateCart = async (productList, paymentMethod) => {
       (p) => p._id.toString() === item.product.toString()
     );
 
-    console.log(product, "p");
-
     if (!product) continue;
     const quantity = item.quantity || 1;
 
     const discountOnItem = Number(
       (product.price - (product.price * product.discount) / 100).toFixed(2)
     );
-    totalPrice += discountOnItem;
+    totalPrice += discountOnItem * quantity;
 
     items.push({
       product: product._id,
@@ -144,6 +140,14 @@ const calculateCart = async (productList, paymentMethod) => {
   const discountAmount = (totalPrice * discountPercent) / 100;
   const shippingPrice = totalPrice > 500 ? 0 : 50;
   const finalPrice = totalPrice - discountAmount + shippingPrice;
+  console.log({
+    items,
+    totalPrice: Number(totalPrice.toFixed(2)),
+    shippingPrice,
+    finalPrice,
+    discountAmount,
+    discountPercent,
+  });
 
   return {
     items,
