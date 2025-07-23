@@ -42,7 +42,7 @@ const productSchema = new mongoose.Schema({
   category: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    ref:"category"
+    ref: "category",
   },
   highlights: [
     {
@@ -52,6 +52,11 @@ const productSchema = new mongoose.Schema({
   specifications: {
     type: Map,
     of: String,
+  },
+  discount: {
+    type: Number,
+    require: true,
+    default: 0
   },
 });
 productSchema.index(

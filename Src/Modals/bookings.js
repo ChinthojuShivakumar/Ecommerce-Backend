@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const bookingSchema = new mongoose.Schema({
-  product: {
+  productId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: "products",
@@ -10,7 +10,7 @@ const bookingSchema = new mongoose.Schema({
     type: Date,
     default: "Order_",
   },
-  user: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: "Users",
@@ -31,7 +31,7 @@ const bookingSchema = new mongoose.Schema({
   paymentMode: {
     type: String,
     required: true,
-    enum: ["cc", "dc", "upi", "emi", "qr", "cash"],
+    enum: ["cc", "dc", "upi", "emi", "qr", "cod"],
   },
   deleted: {
     type: Boolean,
@@ -40,6 +40,10 @@ const bookingSchema = new mongoose.Schema({
   deletedAt: {
     type: Date,
     default: null,
+  },
+  orderId: {
+    type: String,
+    require: true,
   },
 });
 

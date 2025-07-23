@@ -31,7 +31,7 @@ export const FetchUsers = async (req, res) => {
     const skip = (page - 1) * limit;
     if (req.query.status) filters.status = req.query.status;
     const totalUsers = await userModal.countDocuments(filters);
-    const totalPages = Math.ceil(totalUsers / limit);  
+    const totalPages = Math.ceil(totalUsers / limit);
 
     const userList = await userModal.find(filters).skip(skip).limit(limit);
     return res.status(200).json({
@@ -50,9 +50,11 @@ export const FetchUsers = async (req, res) => {
 
 export const UpdateUser = async (req, res) => {
   try {
+    // console.log(req.body);
     const findUser = await userModal.findOne({
-      phoneNumber: req.body.phoneNumber,
+      _id: req.params._id,
     });
+
     if (!findUser) {
       return res
         .status(400)
@@ -77,7 +79,6 @@ export const DeleteUser = async (req, res) => {
     const findUser = await userModal.findOne({
       _id: req.params._id,
       isDeleted: false,
-      deletedAt: null,
     });
     if (!findUser) {
       return res
@@ -97,6 +98,34 @@ export const DeleteUser = async (req, res) => {
       message: "User Deleted Successfully :)",
       success: true,
       user: deletedUser,
+    });
+  } catch (error) {
+    console.log(error.message);
+
+    return res.status(500).json({ error: error });
+  }
+};
+
+export const changeUserStatus = async (req, res) => {
+  try {
+    const findUser = await userModal.findOne({
+      _id: req.params._id,
+      isDeleted: false,
+      status: "Active",
+    });
+    if (!findUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User Not Found" });
+    }
+    const updatedStatus = await userModal.updateOne(
+      { _id: req.params._id },
+      { $set: { status: req.body.status } }
+    );
+    return res.status(202).json({
+      success: true,
+      message: "User Account Deactivated",
+      updatedStatus,
     });
   } catch (error) {
     console.log(error.message);
