@@ -102,6 +102,17 @@ export const deleteCartItem = async (req, res) => {
         .json({ success: false, message: "cart item not found" });
     }
 
+    // const originalLength = findCart.productList.length;
+
+    // findCart.productList = findCart.productList.filter(
+    //   (p) => p._id.toString() !== cPId
+    // );
+
+    // await findCart.save();
+    // const recalculated = await calculateCart(findCart.productList);
+    // console.log(recalculated);
+
+    // Find and soft delete the product in productList
     const product = findCart.productList.find((p) => p._id.toString() === cPId);
 
     if (!product) {
