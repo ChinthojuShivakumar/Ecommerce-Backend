@@ -54,8 +54,7 @@ export const UpdateUser = async (req, res) => {
     const findUser = await userModal.findOne({
       _id: req.params._id,
     });
-    
-    
+
     if (!findUser) {
       return res
         .status(400)

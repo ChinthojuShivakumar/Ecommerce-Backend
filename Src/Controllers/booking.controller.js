@@ -16,6 +16,7 @@ export const createBooking = async (req, res) => {
         .status(404)
         .json({ success: false, message: "user not found payment failed :(" });
     }
+
     const findProduct = await productModal.findOne({
       _id: productId,
     });
@@ -123,11 +124,11 @@ export const fetchBookingList = async (req, res) => {
       .select("-deleted -deletedAt")
       .populate([
         {
-          path: "product",
+          path: "productId",
           select: "-deleted -deletedAt",
         },
         {
-          path: "user", // 👈 assuming the field is named `userId` in your schema
+          path: "userId", // 👈 assuming the field is named `userId` in your schema
           select: "-deleted -deletedAt",
         },
       ]);
@@ -198,7 +199,7 @@ export const verifyPayment = async (req, res) => {
         "x-client-secret": process.env.TEST_X_CLIENT_SECRET,
         "x-api-version": "2023-08-01",
       },
-    }; 
+    };
 
     const checkStatus = await axios.get(
       `${process.env.TEST_VERIFY_PAYMENT_URL}/${orderId}`,
