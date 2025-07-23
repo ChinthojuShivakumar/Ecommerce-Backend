@@ -2,10 +2,12 @@ import axios from "axios";
 import bookingModal from "../Modals/bookings.js";
 import userModal from "../Modals/users.js";
 import productModal from "../Modals/products.js";
+import cartModal from "../Modals/cart.js";
 
 export const createBooking = async (req, res) => {
   try {
-    const { totalPrice, productId, userId, paymentMode, quantity } = req.body;
+    // const { totalPrice, productId, userId, paymentMode, quantity } = req.body;
+    const { userId, paymentMode } = req.body;
     const expirationTime = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     const findUser = await userModal.findOne({
@@ -17,31 +19,70 @@ export const createBooking = async (req, res) => {
         .json({ success: false, message: "user not found payment failed :(" });
     }
 
-    const findProduct = await productModal.findOne({
-      _id: productId,
-    });
-    if (!findProduct) {
-      return res.status(404).json({
-        success: false,
-        message: "product not found payment failed :(",
-      });
+    const cartList = await cartModal
+      .find({ userId, deleted: false })
+      .populate("productId");
+
+    let totalPrice = 0;
+    let discountAmount = 0;
+    let totalQuantity = 0;
+
+    for (const item of cartList) {
+      const price = item.productId.price;
+      const discount = item.productId.discount;
+      const quantity = item.quantity;
+
+      const itemTotal = price * quantity;
+      const itemDiscount = (price * discount * quantity) / 100;
+
+      totalPrice += itemTotal;
+      discountAmount += itemDiscount;
+      totalQuantity += quantity;
     }
 
+    // Payment mode discount
+    let paymentMethodDiscount = 0;
+    if (["card", "upi"].includes(paymentMode?.toLowerCase())) {
+      paymentMethodDiscount = ((totalPrice - discountAmount) * 10) / 100;
+      discountAmount += paymentMethodDiscount;
+    }
+
+    const discountPercent = (discountAmount / totalPrice) * 100;
+    const shippingPrice = totalPrice - discountAmount > 500 ? 0 : 50;
+    const finalPrice = totalPrice - discountAmount + shippingPrice;
+
+    // Order ID
+    const orderId =
+      paymentMode === "cod" ? `Order-${Date.now()}` : `Order-${Date.now()}`;
+
+    // Create bookings for each cart item
     if (paymentMode === "cod") {
-      const newBooking = await bookingModal.create({
-        productId,
-        userId,
-        quantity,
-        totalPrice,
-        paymentMode,
-        status: "CONFIRMED",
-        orderId: `COD-${Date.now()}`,
-      });
+      const bookings = [];
+
+      for (const item of cartList) {
+        const booking = await bookingModal.create({
+          productId: item.productId._id,
+          userId: item.userId,
+          quantity: item.quantity,
+          totalPrice,
+          paymentMode,
+          discountPercent,
+          discountAmount,
+          finalPrice,
+          shippingPrice,
+          orderId,
+          status: paymentMode === "cod" ? "CONFIRMED" : "PENDING",
+        });
+        bookings.push(booking);
+      }
 
       return res.status(201).json({
         success: true,
-        message: "Order placed with Cash on Delivery!",
-        booking: newBooking,
+        message:
+          paymentMode === "cod"
+            ? "Order placed with Cash on Delivery!"
+            : "Order placed! Awaiting payment...",
+        bookings,
       });
     }
 
@@ -101,7 +142,7 @@ export const createBooking = async (req, res) => {
       return res.status(500).json({ message: error });
     } else {
       console.error("Unknown Error:", error);
-      return res.status(500).json({ message: "Unknown error" });
+      return res.status(500).json({ message: "Unknown error", error });
     }
   }
 };

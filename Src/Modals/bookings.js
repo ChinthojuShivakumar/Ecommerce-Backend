@@ -7,7 +7,7 @@ const bookingSchema = new mongoose.Schema({
     ref: "products",
   },
   orderId: {
-    type: Date,
+    type: String,
     default: "Order_",
   },
   userId: {
@@ -42,10 +42,7 @@ const bookingSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
-  orderId: {
-    type: String,
-    require: true,
-  },
+ 
   discountPercent: {
     type: Number,
   },
