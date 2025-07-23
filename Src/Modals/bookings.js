@@ -19,6 +19,7 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+
   totalPrice: {
     type: Number,
     require: true,
@@ -44,6 +45,21 @@ const bookingSchema = new mongoose.Schema({
   orderId: {
     type: String,
     require: true,
+  },
+  discountPercent: {
+    type: Number,
+  },
+  discountAmount: {
+    type: Number,
+  },
+  finalPrice: {
+    type: Number,
+    required: true,
+  },
+  shippingPrice: {
+    type: Number,
+    required: true,
+    default: 0,
   },
 });
 

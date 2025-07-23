@@ -3,41 +3,62 @@ import productModal from "../Modals/products.js";
 
 export const createCartList = async (req, res) => {
   try {
-    const { userId, productList } = req.body;
-    const cart = await calculateCart(productList);
-    // console.log(cart, "create");
+    // const { userId, productId } = req.body;
 
-    const savedCart = await cartModal.create({
-      productList: cart.items,
-      totalPrice: cart.totalPrice,
-      discountAmount: cart.discountAmount,
-      discountPercent: cart.discountPercent,
-      finalPrice: cart.finalPrice,
-      shippingPrice: cart.shippingPrice,
-      userId: userId,
-    });
+    const savedCart = await cartModal.create({ ...req.body });
 
     return res.status(201).json({
       success: true,
       message: "product added to cart :)",
-      cartItems: savedCart,
+      cart: savedCart,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const fetchCartList = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { userId } = req.query;
     const cartList = await cartModal
       .find({ deleted: false, userId: userId })
       .select("-deleted -deletedAt")
       .populate("userId", "_id name email phoneNumber")
-      .populate("productList.product", "_id name price discount stock rating");
-    return res
-      .status(200)
-      .json({ success: true, message: "cart fetched successfully", cartList });
+      .populate("productId", "_id name price quantity discount");
+
+    let totalPrice = 0;
+    let discountAmount = 0;
+
+    for (const item of cartList) {
+      const price = item.productId.price;
+      const discount = item.productId.discount;
+      const quantity = item.quantity;
+
+      const totalItemPrice = price * quantity;
+      const itemDiscountAmount = (price * discount * quantity) / 100;
+
+      totalPrice += totalItemPrice;
+      discountAmount += itemDiscountAmount;
+    }
+
+    const discountPercent = (discountAmount / totalPrice) * 100;
+    const shippingPrice = totalPrice - discountAmount > 500 ? 0 : 50;
+    const finalPrice = totalPrice - discountAmount + shippingPrice;
+
+    const result = {
+      totalPrice, // Before discount
+      discountAmount, // Absolute discount value
+      discountPercent, // Calculated % overall
+      shippingPrice,
+      finalPrice, // Total to pay
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: "cart fetched successfully",
+      cartList,
+      priceDrop: result,
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -45,44 +66,27 @@ export const fetchCartList = async (req, res) => {
 
 export const updateCart = async (req, res) => {
   try {
-    const { userId, _id, cPId, quantity } = req.body; //cart product id is cpd
-
-    const findCart = await cartModal.findOne({
-      userId: userId,
-      _id: _id,
+    const findCartItem = await cartModal.findOne({
+      _id: req.body._id,
       deleted: false,
     });
-    if (!findCart) {
+    if (!findCartItem) {
       return res
-        .status(400)
+        .status(404)
         .json({ success: false, message: "cart item not found" });
     }
-    const t = await cartModal.findOne({
-      _id: _id,
-      userId,
-    });
-    t.productList.map((p) => {
-      if (p._id.toString() === cPId) {
-        p.quantity = quantity;
-      }
-    });
+    const updatedCart = await cartModal.updateOne(
+      { _id: req.body._id },
+      { $set: { quantity: req.body.quantity } }
+    );
 
-    t.save();
-
-    const cartWithProducts = await cartModal
-      .findOne({ _id: _id, deleted: false })
-      .select("productList");
-
-    const recalculatedCart = await calculateCart(cartWithProducts.productList);
-
-    await cartWithProducts.save();
-
-    return res.status(202).json({
-      success: false,
-      message: "cart updated successfully",
-
-      cart: recalculatedCart,
-    });
+    return res
+      .status(202)
+      .json({
+        message: "cart item updated successfully",
+        success: true,
+        cart: updatedCart,
+      });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -90,65 +94,24 @@ export const updateCart = async (req, res) => {
 
 export const deleteCartItem = async (req, res) => {
   try {
-    const { userId, _id, cPId } = req.query;
-    const findCart = await cartModal.findOne({
-      userId: userId,
-      _id: _id,
-      deleted: false,
-    });
-    if (!findCart) {
+    const findCartItem = await cartModal.find({ _id: req.params._id });
+
+    if (!findCartItem) {
       return res
-        .status(400)
+        .status(404)
         .json({ success: false, message: "cart item not found" });
     }
 
-    // const originalLength = findCart.productList.length;
-
-    // findCart.productList = findCart.productList.filter(
-    //   (p) => p._id.toString() !== cPId
-    // );
-
-    // await findCart.save();
-    // const recalculated = await calculateCart(findCart.productList);
-    // console.log(recalculated);
-
-    // Find and soft delete the product in productList
-    const product = findCart.productList.find((p) => p._id.toString() === cPId);
-
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found in cart",
-      });
-    }
-
-    product.deleted = true;
-    product.deletedAt = new Date();
-
-    // Save the changes
-    await findCart.save();
-
-    // Recalculate price based on non-deleted items
-    const activeProducts = findCart.productList.filter((p) => !p.deleted);
-    const recalculated = await calculateCart(activeProducts);
-
-    findCart.totalPrice = recalculated.totalPrice;
-    findCart.discountPercent = recalculated.discountPercent || 0;
-    findCart.discountAmount = recalculated.discountAmount || 0;
-    findCart.finalPrice =
-      recalculated.finalPrice ||
-      recalculated.totalPrice +
-        (findCart.shippingPrice || 50) -
-        (recalculated.discountAmount || 0);
-    findCart.shippingPrice = findCart.shippingPrice || 50;
+    const updatedCart = await cartModal.updateOne(
+      { _id: req.params._id },
+      { $set: { deleted: true, deletedAt: Date.now() } }
+    );
 
     return res.status(202).json({
       success: true,
       message: "cart item deleted",
-      product: findCart,
+      cart: updatedCart,
     });
-
-    await findCart.save();
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
