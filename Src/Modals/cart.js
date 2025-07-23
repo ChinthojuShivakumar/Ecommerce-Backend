@@ -21,6 +21,14 @@ const cartSchema = new mongoose.Schema(
         appliedDiscount: {
           type: Number,
         },
+        deleted: {
+          type: Boolean,
+          default: false,
+        },
+        deletedAt: {
+          type: Date,
+          default: null,
+        },
       },
     ],
     totalPrice: {

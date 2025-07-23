@@ -46,7 +46,6 @@ export const fetchCartList = async (req, res) => {
 export const updateCart = async (req, res) => {
   try {
     const { userId, _id, cPId, quantity } = req.body; //cart product id is cpd
-    // console.log(cPId, "cpid");
 
     const findCart = await cartModal.findOne({
       userId: userId,
@@ -69,23 +68,12 @@ export const updateCart = async (req, res) => {
     });
 
     t.save();
-    // const updatedCart = await cartModal.findOne({ _id: _id, deleted: false });
 
-    // Ensure we fetch productList with product & quantity
     const cartWithProducts = await cartModal
       .findOne({ _id: _id, deleted: false })
       .select("productList");
 
     const recalculatedCart = await calculateCart(cartWithProducts.productList);
-
-    // cartWithProducts.productList = recalculatedCart.items;
-    // cartWithProducts.totalPrice = recalculatedCart.totalPrice;
-    // cartWithProducts.discountAmount = recalculatedCart.discountAmount;
-    // cartWithProducts.discountPercent = recalculatedCart.discountPercent;
-    // cartWithProducts.finalPrice = recalculatedCart.finalPrice;
-    // cartWithProducts.shippingPrice = recalculatedCart.shippingPrice;
-
-    // console.log(recalculatedCart);
 
     await cartWithProducts.save();
 
@@ -93,8 +81,74 @@ export const updateCart = async (req, res) => {
       success: false,
       message: "cart updated successfully",
 
-      cart: cartWithProducts,
+      cart: recalculatedCart,
     });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteCartItem = async (req, res) => {
+  try {
+    const { userId, _id, cPId } = req.query;
+    const findCart = await cartModal.findOne({
+      userId: userId,
+      _id: _id,
+      deleted: false,
+    });
+    if (!findCart) {
+      return res
+        .status(400)
+        .json({ success: false, message: "cart item not found" });
+    }
+
+    // const originalLength = findCart.productList.length;
+
+    // findCart.productList = findCart.productList.filter(
+    //   (p) => p._id.toString() !== cPId
+    // );
+
+    // await findCart.save();
+    // const recalculated = await calculateCart(findCart.productList);
+    // console.log(recalculated);
+
+    // Find and soft delete the product in productList
+    const product = findCart.productList.find((p) => p._id.toString() === cPId);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found in cart",
+      });
+    }
+
+    product.deleted = true;
+    product.deletedAt = new Date();
+
+    // Save the changes
+    await findCart.save();
+
+    // Recalculate price based on non-deleted items
+    const activeProducts = findCart.productList.filter((p) => !p.deleted);
+    const recalculated = await calculateCart(activeProducts);
+
+    findCart.totalPrice = recalculated.totalPrice;
+    findCart.discountPercent = recalculated.discountPercent || 0;
+    findCart.discountAmount = recalculated.discountAmount || 0;
+    findCart.finalPrice =
+      recalculated.finalPrice ||
+      recalculated.totalPrice +
+        (findCart.shippingPrice || 50) -
+        (recalculated.discountAmount || 0);
+    findCart.shippingPrice = findCart.shippingPrice || 50;
+
+    return res.status(202).json({
+      success: true,
+      message: "cart item deleted",
+      product: findCart,
+    });
+
+    await findCart.save();
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
