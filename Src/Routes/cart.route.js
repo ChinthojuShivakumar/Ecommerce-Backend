@@ -11,6 +11,6 @@ const cartRoute = express.Router();
 cartRoute.post("/cart/create", createCartList);
 cartRoute.get("/cart/list", fetchCartList);
 cartRoute.put("/cart/update", updateCart);
-cartRoute.delete("/cart/delete", deleteCartItem);
+cartRoute.delete("/cart/:_id", deleteCartItem);
 
 export default cartRoute;

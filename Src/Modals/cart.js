@@ -2,53 +2,10 @@ import mongoose from "mongoose";
 
 const cartSchema = new mongoose.Schema(
   {
-    productList: [
-      {
-        product: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "products",
-        },
-        quantity: {
-          type: Number,
-          default: 1,
-        },
-        discountPrice: {
-          type: Number,
-        },
-        total: {
-          type: Number,
-        },
-        appliedDiscount: {
-          type: Number,
-        },
-        deleted: {
-          type: Boolean,
-          default: false,
-        },
-        deletedAt: {
-          type: Date,
-          default: null,
-        },
-      },
-    ],
-    totalPrice: {
-      type: Number,
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
-    },
-    discountPercent: {
-      type: Number,
-    },
-    discountAmount: {
-      type: Number,
-    },
-    finalPrice: {
-      type: Number,
-      required: true,
-    },
-    shippingPrice: {
-      type: Number,
-      required: true,
-      default: 0,
+      ref: "products",
     },
     deletedAt: {
       type: Date,
@@ -62,6 +19,10 @@ const cartSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Users",
       required: true,
+    },
+    quantity: {
+      type: Number,
+      default: 1,
     },
   },
   {

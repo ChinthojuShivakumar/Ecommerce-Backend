@@ -2,11 +2,15 @@ import axios from "axios";
 import bookingModal from "../Modals/bookings.js";
 import userModal from "../Modals/users.js";
 import productModal from "../Modals/products.js";
+import cartModal from "../Modals/cart.js";
+// import cartModal from "../Modals/cart.js";
 
 export const createBooking = async (req, res) => {
   try {
-    const { totalPrice, productId, userId, paymentMode, quantity } = req.body;
+    // const { totalPrice, productId, userId, paymentMode, quantity } = req.body;
+    const { userId, paymentMode, finalPrice } = req.body;
     const expirationTime = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    // console.log(req.body);
 
     const findUser = await userModal.findOne({
       _id: userId,
@@ -17,31 +21,21 @@ export const createBooking = async (req, res) => {
         .json({ success: false, message: "user not found payment failed :(" });
     }
 
-    const findProduct = await productModal.findOne({
-      _id: productId,
-    });
-    if (!findProduct) {
-      return res.status(404).json({
-        success: false,
-        message: "product not found payment failed :(",
-      });
-    }
+    // Order ID
+    const orderId =
+      paymentMode === "cod" ? `Order_${Date.now()}` : `Order_${Date.now()}`;
 
+    // Create bookings for each cart item
     if (paymentMode === "cod") {
-      const newBooking = await bookingModal.create({
-        productId,
-        userId,
-        quantity,
-        totalPrice,
-        paymentMode,
-        status: "CONFIRMED",
-        orderId: `COD-${Date.now()}`,
-      });
-
+      const booking = await bookingModal.create({ ...req.body });
+      await cartModal.updateMany(
+        { userId },
+        { $set: { deleted: true, deletedAt: Date.now() } }
+      );
       return res.status(201).json({
         success: true,
-        message: "Order placed with Cash on Delivery!",
-        booking: newBooking,
+        message: "Order Placed with COD",
+        booking,
       });
     }
 
@@ -54,9 +48,9 @@ export const createBooking = async (req, res) => {
       },
       thank_you_msg: "Thank you for your payment!",
       link_expiry_time: expirationTime,
-      link_amount: Number(totalPrice * 100),
+      link_amount: Number(finalPrice),
       link_currency: "INR",
-      link_purpose: findProduct?.name,
+      link_purpose: `order of ${req.body.products.length} items`,
       link_meta: {
         return_url: "http://localhost:5173/orders",
         notify_url: "http://localhost:5173",
@@ -82,11 +76,20 @@ export const createBooking = async (req, res) => {
     );
 
     if (payLink.status == 200) {
+      const productsWithStatus = req.body.products.map((item) => ({
+        ...item,
+        status: payLink.data.link_status === "PAID" ? "CONFIRMED" : "PENDING", // or "CONFIRMED" / dynamic
+      }));
       const newBooking = new bookingModal({
         ...req.body,
         orderId: payLink.data.link_id,
+        products: productsWithStatus,
       });
       await newBooking.save();
+      await cartModal.updateMany(
+        { userId },
+        { $set: { deleted: true, deletedAt: Date.now() } }
+      );
       return res.status(201).json({
         success: true,
         message: "Payment link created..!",
@@ -100,8 +103,8 @@ export const createBooking = async (req, res) => {
       console.error("Error Response:", error.response.data);
       return res.status(500).json({ message: error });
     } else {
-      console.error("Unknown Error:", error);
-      return res.status(500).json({ message: "Unknown error" });
+      console.error("Unknown Error:", error.message);
+      return res.status(500).json({ message: "Unknown error", error });
     }
   }
 };
@@ -114,7 +117,7 @@ export const fetchBookingList = async (req, res) => {
     const filters = {
       deleted: false,
     };
-    if (req.query.status) filters.status = req.query.status;
+    if (req.query.status) filters["products.status"] = req.query.status;
     const totalBookings = await bookingModal.countDocuments(filters);
     const totalPages = Math.ceil(totalBookings / limit);
     const bookingList = await bookingModal
@@ -124,12 +127,13 @@ export const fetchBookingList = async (req, res) => {
       .select("-deleted -deletedAt")
       .populate([
         {
-          path: "productId",
-          select: "-deleted -deletedAt",
+          path: "userId", // 👈 assuming the field is named `userId` in your schema
+          select: "-deleted -deletedAt -password",
         },
         {
-          path: "userId", // 👈 assuming the field is named `userId` in your schema
-          select: "-deleted -deletedAt",
+          path: "products.product", // 🔥 populate each product inside products array
+          model: "products", // 👈 replace with your actual Product model name
+          select: "images name _id",
         },
       ]);
     return res.status(200).json({
@@ -205,14 +209,26 @@ export const verifyPayment = async (req, res) => {
       `${process.env.TEST_VERIFY_PAYMENT_URL}/${orderId}`,
       config
     );
-    console.log(checkStatus?.data);
 
     if (checkStatus?.status === 200) {
       // Correcting the filter parameter to be an object
+      const newStatus =
+        checkStatus?.data?.link_status == "PAID"
+          ? "CONFIRMED"
+          : checkStatus.data.link_status == "FAILED"
+          ? "FAILED"
+          : checkStatus.data.link_status;
       const paymentData = await bookingModal.findOneAndUpdate(
-        { orderId }, // Filter by orderId field (an object)
-        { status: checkStatus?.data?.link_status }, // Update the payment status
-        { new: true }
+        { orderId },
+        {
+          $set: {
+            "products.$[elem].status": newStatus,
+          },
+        },
+        {
+          new: true,
+          arrayFilters: [{ "elem.status": { $ne: newStatus } }],
+        }
       );
 
       if (!paymentData) {
@@ -235,6 +251,8 @@ export const verifyPayment = async (req, res) => {
       });
     }
   } catch (error) {
-    return res.status(500).json({ error: error.message, success: false });
+    console.log(error);
+
+    return res.status(500).json({ message: error, success: false });
   }
 };
