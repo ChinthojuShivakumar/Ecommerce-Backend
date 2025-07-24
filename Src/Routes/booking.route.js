@@ -14,6 +14,6 @@ bookingRoute.get("/booking", fetchBookingList);
 bookingRoute.put("/booking/:_id", updateBooking);
 bookingRoute.delete("/booking/:_id", deleteBooking);
 
-bookingRoute.get("/verify-payment", verifyPayment);
+bookingRoute.post("/verify-payment", verifyPayment);
 
 export default bookingRoute;

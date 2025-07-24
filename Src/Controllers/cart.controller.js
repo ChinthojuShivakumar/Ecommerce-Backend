@@ -29,7 +29,7 @@ export const fetchCartList = async (req, res) => {
     let totalPrice = 0;
     let discountAmount = 0;
 
-    for (const item of cartList) {
+    const enrichedCartList = cartList.map((item) => {
       const price = item.productId.price;
       const discount = item.productId.discount;
       const quantity = item.quantity;
@@ -39,7 +39,19 @@ export const fetchCartList = async (req, res) => {
 
       totalPrice += totalItemPrice;
       discountAmount += itemDiscountAmount;
-    }
+
+      // Attach calculated values per item
+      return {
+        ...item._doc,
+        productId: {
+          ...item.productId._doc,
+          originalPrice: price.toFixed(2),
+          discountAmount: ((price * discount) / 100).toFixed(2),
+          discountedPrice: (price - (price * discount) / 100).toFixed(2),
+          discountPercent: discount,
+        },
+      };
+    });
 
     const discountPercent = (discountAmount / totalPrice) * 100;
     const shippingPrice = totalPrice - discountAmount > 500 ? 0 : 50;
@@ -56,7 +68,7 @@ export const fetchCartList = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "cart fetched successfully",
-      cartList,
+      cartList: enrichedCartList,
       priceDrop: result,
     });
   } catch (error) {
