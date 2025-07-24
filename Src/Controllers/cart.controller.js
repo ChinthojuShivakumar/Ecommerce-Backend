@@ -24,7 +24,7 @@ export const fetchCartList = async (req, res) => {
       .find({ deleted: false, userId: userId })
       .select("-deleted -deletedAt")
       .populate("userId", "_id name email phoneNumber")
-      .populate("productId", "_id name price quantity discount");
+      .populate("productId", "_id name price quantity discount images");
 
     let totalPrice = 0;
     let discountAmount = 0;
@@ -46,11 +46,11 @@ export const fetchCartList = async (req, res) => {
     const finalPrice = totalPrice - discountAmount + shippingPrice;
 
     const result = {
-      totalPrice, // Before discount
-      discountAmount, // Absolute discount value
-      discountPercent, // Calculated % overall
+      totalPrice: totalPrice.toFixed(2), // Before discount
+      discountAmount: discountAmount.toFixed(2), // Absolute discount value
+      discountPercent: discountPercent, // Calculated % overall
       shippingPrice,
-      finalPrice, // Total to pay
+      finalPrice: finalPrice.toFixed(2), // Total to pay
     };
 
     return res.status(200).json({
@@ -80,13 +80,11 @@ export const updateCart = async (req, res) => {
       { $set: { quantity: req.body.quantity } }
     );
 
-    return res
-      .status(202)
-      .json({
-        message: "cart item updated successfully",
-        success: true,
-        cart: updatedCart,
-      });
+    return res.status(202).json({
+      message: "cart item updated successfully",
+      success: true,
+      cart: updatedCart,
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -115,63 +113,4 @@ export const deleteCartItem = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
-};
-
-const calculateCart = async (productList, paymentMethod) => {
-  const productIds = productList.map((p) => p.product);
-
-  const products = await productModal.find({ _id: { $in: productIds } });
-
-  let totalPrice = 0;
-
-  const items = [];
-
-  for (const item of productList) {
-    const product = products.find(
-      (p) => p._id.toString() === item.product.toString()
-    );
-
-    if (!product) continue;
-    const quantity = item.quantity || 1;
-
-    const discountOnItem = Number(
-      (product.price - (product.price * product.discount) / 100).toFixed(2)
-    );
-    totalPrice += discountOnItem * quantity;
-
-    items.push({
-      product: product._id,
-      name: product.name,
-      price: product.price,
-      quantity,
-
-      discountPrice: discountOnItem,
-      appliedDiscount: product.discount,
-    });
-  }
-
-  let discountPercent = 0;
-  if (["card", "upi"].includes(paymentMethod?.toLowerCase())) {
-    discountPercent = 10;
-  }
-  const discountAmount = (totalPrice * discountPercent) / 100;
-  const shippingPrice = totalPrice > 500 ? 0 : 50;
-  const finalPrice = totalPrice - discountAmount + shippingPrice;
-  console.log({
-    items,
-    totalPrice: Number(totalPrice.toFixed(2)),
-    shippingPrice,
-    finalPrice,
-    discountAmount,
-    discountPercent,
-  });
-
-  return {
-    items,
-    totalPrice: Number(totalPrice.toFixed(2)),
-    shippingPrice,
-    finalPrice,
-    discountAmount,
-    discountPercent,
-  };
 };
