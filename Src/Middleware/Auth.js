@@ -36,8 +36,6 @@ export const authentication = (req, res, next) => {
           .json({ success: false, message: "Token is not valid!", error });
       }
       req.user = decodedToken;
-      console.log(req.user, "req.user");
-      
       next();
     });
   } catch (error) {
