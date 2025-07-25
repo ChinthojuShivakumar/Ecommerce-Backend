@@ -95,6 +95,11 @@ const bookingSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    addressId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "address",
+      required: true,
+    },
   },
   {
     timestamps: true,

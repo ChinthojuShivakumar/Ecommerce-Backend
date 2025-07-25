@@ -61,6 +61,8 @@ export const createBooking = async (req, res) => {
       },
     };
 
+    console.log(payload);
+
     const config = {
       headers: {
         "x-client-id": process.env.TEST_X_CLIENT_ID,
@@ -111,13 +113,20 @@ export const createBooking = async (req, res) => {
 
 export const fetchBookingList = async (req, res) => {
   try {
+    const userId = req.query.userId;
     const page = parseInt(req.query.page);
     const limit = parseInt(req.query.limit);
     const skip = (page - 1) * limit;
     const filters = {
       deleted: false,
     };
+  
+  console.log(req.user);
+   
+    
     if (req.query.status) filters["products.status"] = req.query.status;
+    if (req.user?.role !== "ADMIN" && req.query.userId) filters.userId = userId;
+     
     const totalBookings = await bookingModal.countDocuments(filters);
     const totalPages = Math.ceil(totalBookings / limit);
     const bookingList = await bookingModal
@@ -135,6 +144,10 @@ export const fetchBookingList = async (req, res) => {
           model: "products", // 👈 replace with your actual Product model name
           select: "images name _id",
         },
+        {
+          path:"addressId",
+          select:"-deletedAt -deleted"
+        }
       ]);
     return res.status(200).json({
       message: "Booking list fetched successfully",

@@ -16,7 +16,7 @@ export const createAddress = async (req, res) => {
 
 export const fetchAddress = async (req, res) => {
   try {
-    const userId = req.params._id;
+    const userId = req.query.userId;
     const filters = {
       deleted: false,
     };
