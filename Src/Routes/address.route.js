@@ -6,13 +6,14 @@ import {
   setDefaultAddress,
   updateAddress,
 } from "../Controllers/address.controller.js";
+import { authentication } from "../Middleware/Auth.js";
 
 const addressRoute = express.Router();
 
-addressRoute.post("/address/create", createAddress);
-addressRoute.get("/address", fetchAddress);
-addressRoute.put("/address/:_id", updateAddress);
-addressRoute.delete("/address/:_id", deleteAddress);
-addressRoute.patch("/address/:_id", setDefaultAddress);
+addressRoute.post("/address/create", authentication, createAddress);
+addressRoute.get("/address", authentication, fetchAddress);
+addressRoute.put("/address/:_id", authentication, updateAddress);
+addressRoute.delete("/address/:_id", authentication, deleteAddress);
+addressRoute.patch("/address/:_id", authentication, setDefaultAddress);
 
 export default addressRoute;

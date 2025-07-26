@@ -6,14 +6,15 @@ import {
   updateBooking,
   verifyPayment,
 } from "../Controllers/booking.controller.js";
+import { authentication } from "../Middleware/Auth.js";
 
 const bookingRoute = express.Router();
 
-bookingRoute.post("/booking", createBooking);
-bookingRoute.get("/booking", fetchBookingList);
-bookingRoute.put("/booking/:_id", updateBooking);
-bookingRoute.delete("/booking/:_id", deleteBooking);
+bookingRoute.post("/booking", authentication, createBooking);
+bookingRoute.get("/booking", authentication, fetchBookingList);
+bookingRoute.put("/booking/:_id", authentication, updateBooking);
+bookingRoute.delete("/booking/:_id", authentication, deleteBooking);
 
-bookingRoute.post("/verify-payment", verifyPayment);
+bookingRoute.post("/verify-payment", authentication, verifyPayment);
 
 export default bookingRoute;

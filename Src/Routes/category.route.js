@@ -6,6 +6,7 @@ import {
   UpdateCategory,
 } from "../Controllers/category.controller.js";
 import { FileUpload } from "../../Uploads/multercategory.js";
+import { authentication } from "../Middleware/Auth.js";
 
 const UPLOAD_PATH = "Public/categories";
 const ALLOWED_IMAGE_FILES = /jpeg|jpg|png|webp/;
@@ -24,10 +25,16 @@ const CategoryRoute = express.Router();
 
 // CategoryRoute.route("/category").post()
 
-CategoryRoute.post("/category", FileUpload(FilePayload), CreateCategory);
+CategoryRoute.post(
+  "/category",
+  authentication,
+  FileUpload(FilePayload),
+  CreateCategory
+);
 CategoryRoute.get("/category", FetchCategoryList);
 CategoryRoute.put(
   "/category/:_id",
+  authentication,
   FileUpload({
     fieldName: "image",
     required: false,
@@ -38,6 +45,6 @@ CategoryRoute.put(
   }),
   UpdateCategory
 );
-CategoryRoute.delete("/category/:_id", DeleteCategory);
+CategoryRoute.delete("/category/:_id", authentication, DeleteCategory);
 
 export default CategoryRoute;
