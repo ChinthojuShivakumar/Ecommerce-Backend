@@ -66,7 +66,7 @@ export const FetchUsers = async (req, res) => {
 
 export const UpdateUser = async (req, res) => {
   try {
-    // console.log(req.body);
+    console.log(req.body);
     const findUser = await userModal.findOne({
       _id: req.params._id,
     });

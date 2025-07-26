@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema({
     enum: ["USER", "ADMIN", "SUPER ADMIN"],
     default: "USER",
   },
+  gender: {
+    type: String,
+    enum: ["Male", "Female", "Others"],
+  },
 });
 
 userSchema.index({ deletedAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
