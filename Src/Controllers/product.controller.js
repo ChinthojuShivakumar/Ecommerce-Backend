@@ -97,7 +97,7 @@ export const fetchProducts = async (req, res) => {
     };
     if (req.query.category) {
       const findCategory = await categoryModal.findOne({
-        name: req.query.category,
+        _id: req.query.category,
       });
       if (findCategory) {
         filters.category = findCategory._id;
