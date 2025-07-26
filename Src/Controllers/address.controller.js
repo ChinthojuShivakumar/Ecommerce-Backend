@@ -16,7 +16,7 @@ export const createAddress = async (req, res) => {
 
 export const fetchAddress = async (req, res) => {
   try {
-    const userId = req.params._id;
+    const userId = req.query.userId;
     const filters = {
       deleted: false,
     };
@@ -61,6 +61,41 @@ export const updateAddress = async (req, res) => {
   }
 };
 
+export const setDefaultAddress = async (req, res) => {
+  try {
+    const { _id } = req.params;
+    const findAddress = await addressModal.findOne({
+      deleted: false,
+      _id: _id,
+    });
+    if (!findAddress) {
+      return res
+        .status(404)
+        .json({ message: "address not found", success: false });
+    }
+
+    await addressModal.updateMany(
+      {
+        userId: req.body.userId,
+        _id: { $ne: _id },
+      },
+      { $set: { isDefault: false } }
+    );
+
+    const updatedData = await addressModal.updateOne(
+      { _id: _id, userId: req.body.userId },
+      { $set: { isDefault: req.body.isDefault } }
+    );
+    return res.status(202).json({
+      success: true,
+      message: "address updated successfully",
+      updatedData,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error, success: false });
+  }
+};
+
 export const deleteAddress = async (req, res) => {
   try {
     const { _id } = req.params;
@@ -86,5 +121,3 @@ export const deleteAddress = async (req, res) => {
     return res.status(500).json({ message: error, success: false });
   }
 };
-
-

@@ -33,7 +33,15 @@ const bookingSchema = new mongoose.Schema(
         },
         status: {
           type: String,
-          enum: ["CONFIRMED", "PENDING", "SHIPPED", "DELIVERED", "FAILED"],
+          enum: [
+            "CONFIRMED",
+            "PENDING",
+            "SHIPPED",
+            "DELIVERED",
+            "FAILED",
+            "OUT FOR DELIVERY",
+            "RETURNED",
+          ],
           default: "PENDING",
         },
         deliveredAt: {
@@ -94,6 +102,11 @@ const bookingSchema = new mongoose.Schema(
       type: Number,
       required: true,
       default: 0,
+    },
+    addressId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "address",
+      required: true,
     },
   },
   {

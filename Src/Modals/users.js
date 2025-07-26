@@ -11,6 +11,11 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
+    required: true,
+  },
+  plainPassword: {
+    type: String,
+    required: true,
   },
   email: {
     type: String,
@@ -33,6 +38,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["USER", "ADMIN", "SUPER ADMIN"],
     default: "USER",
+  },
+  gender: {
+    type: String,
+    enum: ["Male", "Female", "Others"],
   },
 });
 

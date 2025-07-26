@@ -1,3 +1,7 @@
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 export const RequiredRoles = (...roles) => {
   return (req, res, next) => {
     try {
@@ -13,4 +17,28 @@ export const RequiredRoles = (...roles) => {
         .json({ message: error.message || "Internal Server Error" });
     }
   };
+};
+
+export const authentication = (req, res, next) => {
+  try {
+    const token =
+      req.headers.authorization && req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res
+        .status(401)
+        .json({ success: false, message: "unauthorized :(" });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (error, decodedToken) => {
+      if (error) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Token is not valid!", error });
+      }
+      req.user = decodedToken;
+      next();
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
 };

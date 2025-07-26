@@ -61,6 +61,8 @@ export const createBooking = async (req, res) => {
       },
     };
 
+    console.log(payload);
+
     const config = {
       headers: {
         "x-client-id": process.env.TEST_X_CLIENT_ID,
@@ -111,6 +113,7 @@ export const createBooking = async (req, res) => {
 
 export const fetchBookingList = async (req, res) => {
   try {
+    const userId = req.query.userId;
     const page = parseInt(req.query.page);
     const limit = parseInt(req.query.limit);
     const skip = (page - 1) * limit;
@@ -118,10 +121,13 @@ export const fetchBookingList = async (req, res) => {
       deleted: false,
     };
     if (req.query.status) filters["products.status"] = req.query.status;
+    if (req.user?.role !== "ADMIN" && req.query.userId) filters.userId = userId;
+
     const totalBookings = await bookingModal.countDocuments(filters);
     const totalPages = Math.ceil(totalBookings / limit);
     const bookingList = await bookingModal
       .find(filters)
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .select("-deleted -deletedAt")
@@ -135,11 +141,16 @@ export const fetchBookingList = async (req, res) => {
           model: "products", // 👈 replace with your actual Product model name
           select: "images name _id",
         },
+        {
+          path: "addressId",
+          select: "-deletedAt -deleted",
+        },
       ]);
+
     return res.status(200).json({
       message: "Booking list fetched successfully",
       succuss: true,
-      bookingList,
+      bookingList: bookingList,
       totalPages,
       totalBookings,
       page: page,
@@ -253,6 +264,46 @@ export const verifyPayment = async (req, res) => {
   } catch (error) {
     console.log(error);
 
+    return res.status(500).json({ message: error, success: false });
+  }
+};
+
+export const updateStatus = async (req, res) => {
+  const { _id, productId, status } = req.body;
+  try {
+    const findBooking = await bookingModal.findOne({ _id: req.body._id });
+    if (!findBooking) {
+      return res
+        .status(404)
+        .json({ message: "Booking not failed :(", success: false });
+    }
+
+    const updateFields = {
+      "products.$.status": req.body.status,
+    };
+
+    if (status === "DELIVERED")
+      updateFields["products.$.deliveredAt"] = new Date();
+    if (status === "SHIPPED") updateFields["products.$.shippedAt"] = new Date();
+    if (status === "CANCELLED")
+      updateFields["products.$.cancelledAt"] = new Date();
+    if (status === "RETURNED")
+      updateFields["products.$.returnedAt"] = new Date();
+
+    const result = await bookingModal.updateOne(
+      { _id: _id, "products._id": productId },
+      { $set: updateFields }
+    );
+
+    return res
+      .status(202)
+      .json({
+        success: true,
+        message: "status updated successfully :)",
+        result,
+      });
+  } catch (error) {
+    console.log(error);
     return res.status(500).json({ message: error, success: false });
   }
 };

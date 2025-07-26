@@ -1,4 +1,15 @@
 import userModal from "../Modals/users.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import bcrypt from "bcrypt";
+
+dotenv.config();
+
+const hashPassword = async (plainPassword) => {
+  const saltRounds = 10;
+  const hash = await bcrypt.hash(plainPassword, saltRounds);
+  return hash;
+};
 
 export const CreateUser = async (req, res) => {
   try {
@@ -10,7 +21,12 @@ export const CreateUser = async (req, res) => {
         .status(400)
         .json({ message: "User Already exist..!", success: false });
     }
-    const newUser = new userModal({ ...req.body });
+    const hashedPassword = await hashPassword(req.body.password);
+    const newUser = new userModal({
+      ...req.body,
+      password: hashedPassword,
+      plainPassword: req.body.password,
+    });
     await newUser.save();
     return res
       .status(201)
@@ -50,7 +66,7 @@ export const FetchUsers = async (req, res) => {
 
 export const UpdateUser = async (req, res) => {
   try {
-    // console.log(req.body);
+    console.log(req.body);
     const findUser = await userModal.findOne({
       _id: req.params._id,
     });
@@ -130,6 +146,45 @@ export const changeUserStatus = async (req, res) => {
   } catch (error) {
     console.log(error.message);
 
+    return res.status(500).json({ error: error });
+  }
+};
+
+export const loginUser = async (req, res) => {
+  try {
+    const findUser = await userModal.findOne({ email: req.body.email });
+    if (!findUser) {
+      return res
+        .status(404)
+        .json({ message: "Invalid credentials", success: false });
+    }
+    const payload = {
+      _id: findUser._id,
+      role: findUser.role,
+      name: findUser.name,
+      status: findUser.status,
+    };
+    const isPasswordMatched = await bcrypt.compare(
+      req.body.password,
+      findUser.password
+    );
+    if (!isPasswordMatched) {
+      return res
+        .status(404)
+        .json({ message: "Invalid credentials", success: false });
+    }
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+    const { password, plainPassword, ...userWithOutPassword } = findUser._doc;
+    return res.status(200).json({
+      success: true,
+      message: "user login successful",
+      user: userWithOutPassword,
+      token,
+    });
+  } catch (error) {
+    console.log(error.message);
     return res.status(500).json({ error: error });
   }
 };
