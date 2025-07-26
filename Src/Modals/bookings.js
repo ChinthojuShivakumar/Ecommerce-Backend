@@ -33,7 +33,15 @@ const bookingSchema = new mongoose.Schema(
         },
         status: {
           type: String,
-          enum: ["CONFIRMED", "PENDING", "SHIPPED", "DELIVERED", "FAILED"],
+          enum: [
+            "CONFIRMED",
+            "PENDING",
+            "SHIPPED",
+            "DELIVERED",
+            "FAILED",
+            "OUT FOR DELIVERY",
+            "RETURNED",
+          ],
           default: "PENDING",
         },
         deliveredAt: {
