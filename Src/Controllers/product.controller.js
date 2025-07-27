@@ -107,6 +107,10 @@ export const fetchProducts = async (req, res) => {
           .json({ message: "Category not found", success: false });
       }
     }
+    const price = req.query?.price?.split("-");
+    if (price && price?.length === 2)
+      filters.price = { $gte: price[0], $lte: price[1] };
+
     const totalCategories = await productModal.countDocuments(filters);
     const totalPages = Math.ceil(totalCategories / limit);
     const productList = await productModal

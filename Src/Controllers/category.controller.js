@@ -25,8 +25,8 @@ export const CreateCategory = async (req, res) => {
 
 export const FetchCategoryList = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) 
-    const limit = parseInt(req.query.limit) 
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
     const skip = (page - 1) * limit;
     const totalCategories = await categoryModal.countDocuments({
       deleted: false,
@@ -34,6 +34,7 @@ export const FetchCategoryList = async (req, res) => {
     const totalPages = Math.ceil(totalCategories / limit);
     const categoryList = await categoryModal
       .find({ deleted: false })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .select("-deleted -deletedAt");
@@ -60,23 +61,7 @@ export const UpdateCategory = async (req, res) => {
     if (!FindCategory) {
       return res.status(400).json({ message: "category does not exist" });
     }
-    // const oldImagePathURL = FindCategory.image;
-
-    // // If a new image is uploaded
-    // if (req.file && oldImagePathURL) {
-    //   const oldImageName = oldImagePathURL.split("/").pop();
-    //   const fullOldImagePath = path.join(
-    //     process.cwd(), // safer than __dirname in ESM
-    //     "Public",
-    //     "categories",
-    //     oldImageName
-    //   );
-
-    //   // Delete old image if it exists
-    //   if (fs.existsSync(fullOldImagePath)) {
-    //     fs.unlinkSync(fullOldImagePath);
-    //   }
-    // }
+   
 
     const FileName = req?.file?.filename;
     const ImageURL = req.file
