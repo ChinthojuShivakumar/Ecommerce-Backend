@@ -20,16 +20,16 @@ const productSchema = new mongoose.Schema({
     required: true,
   },
   rating: {
-    type: String,
-    default: "0",
+    type: Number,
+    default: 0,
   },
   stock: {
     type: Number,
     required: true,
   },
   totalReviews: {
-    type: String,
-    default: "0",
+    type: Number,
+    default: 0,
   },
   deleted: {
     type: Boolean,
@@ -56,7 +56,7 @@ const productSchema = new mongoose.Schema({
   discount: {
     type: Number,
     require: true,
-    default: 0
+    default: 0,
   },
 });
 productSchema.index(
