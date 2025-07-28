@@ -295,13 +295,11 @@ export const updateStatus = async (req, res) => {
       { $set: updateFields }
     );
 
-    return res
-      .status(202)
-      .json({
-        success: true,
-        message: "status updated successfully :)",
-        result,
-      });
+    return res.status(202).json({
+      success: true,
+      message: "status updated successfully :)",
+      result,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error, success: false });
