@@ -48,7 +48,7 @@ export const createBooking = async (req, res) => {
       },
       thank_you_msg: "Thank you for your payment!",
       link_expiry_time: expirationTime,
-      link_amount: Number(finalPrice),
+      link_amount: parseFloat(finalPrice.toFixed(2)),
       link_currency: "INR",
       link_purpose: `order of ${req.body.products.length} items`,
       link_meta: {
@@ -122,6 +122,12 @@ export const fetchBookingList = async (req, res) => {
     };
     if (req.query.status) filters["products.status"] = req.query.status;
     if (req.user?.role !== "ADMIN" && req.query.userId) filters.userId = userId;
+    if (req.query.year) {
+      const year = parseInt(req.query.year);
+      const start = new Date(`${year}-01-01T00:00:00.000Z`);
+      const end = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+      filters.createdAt = { $gte: start, $lt: end };
+    }
 
     const totalBookings = await bookingModal.countDocuments(filters);
     const totalPages = Math.ceil(totalBookings / limit);
@@ -155,6 +161,7 @@ export const fetchBookingList = async (req, res) => {
       totalBookings,
       page: page,
       limit: limit,
+      // filters,
     });
   } catch (error) {
     return res.status(500).json(error.message);
@@ -295,13 +302,11 @@ export const updateStatus = async (req, res) => {
       { $set: updateFields }
     );
 
-    return res
-      .status(202)
-      .json({
-        success: true,
-        message: "status updated successfully :)",
-        result,
-      });
+    return res.status(202).json({
+      success: true,
+      message: "status updated successfully :)",
+      result,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error, success: false });

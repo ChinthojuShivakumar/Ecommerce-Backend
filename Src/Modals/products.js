@@ -31,6 +31,10 @@ const productSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  reviewList: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "reviews",
+  },
   deleted: {
     type: Boolean,
     default: false,
