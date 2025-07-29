@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import categoryModal from "../Modals/category.js";
+import reviewModal from "../Modals/review.js";
 dotenv.config();
 
 export const createProduct = async (req, res) => {
@@ -113,6 +114,7 @@ export const fetchProducts = async (req, res) => {
 
     const totalCategories = await productModal.countDocuments(filters);
     const totalPages = Math.ceil(totalCategories / limit);
+
     const productList = await productModal
       .find(filters)
       .skip(skip)
@@ -121,12 +123,38 @@ export const fetchProducts = async (req, res) => {
         select: "_id name",
       })
       .limit(limit)
-      .select("-deleted -deletedAt");
+      .select("-deleted -deletedAt")
+      .lean();
+
+    const productIds = productList.map((product) => product._id);
+
+    const reviewList = await reviewModal
+      .find({
+        productId: { $in: productIds },
+      })
+      .select("-__v -deleted -deletedAt")
+      .populate("userId", "name email");
+
+    const reviewMap = {};
+
+    for (const review of reviewList) {
+      const pId = review.productId.toString();
+      if (!reviewMap[pId]) reviewMap[pId] = [];
+      reviewMap[pId].push(review);
+    }
+
+    const enrichedProducts = productList.map((product) => {
+      const plainProduct = product;
+      return {
+        ...plainProduct,
+        reviewList: reviewMap[product._id.toString()] || [],
+      };
+    });
 
     return res.status(200).json({
       message: "products fetched successfully",
       success: true,
-      productList,
+      productList: enrichedProducts,
       totalPages,
       totalCategories,
       page: page,

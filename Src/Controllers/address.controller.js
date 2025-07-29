@@ -121,3 +121,23 @@ export const deleteAddress = async (req, res) => {
     return res.status(500).json({ message: error, success: false });
   }
 };
+
+export const fetchDefaultAddress = async (req, res) => {
+  try {
+    const filters = {
+      userId: req.params.userId,
+      isDefault: true,
+    };
+    const defaultAddress = await addressModal
+      .findOne(filters)
+      .select("-deleted -deletedAt");
+
+    return res.status(200).json({
+      message: "default address fetched",
+      success: true,
+      defaultAddress,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error, success: false });
+  }
+};

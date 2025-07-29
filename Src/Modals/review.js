@@ -33,7 +33,7 @@ const reviewSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timeStamps: true }
+  { timestamps: true }
 );
 
 reviewSchema.index({ deletedAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });

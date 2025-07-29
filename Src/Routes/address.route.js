@@ -3,6 +3,7 @@ import {
   createAddress,
   deleteAddress,
   fetchAddress,
+  fetchDefaultAddress,
   setDefaultAddress,
   updateAddress,
 } from "../Controllers/address.controller.js";
@@ -15,5 +16,6 @@ addressRoute.get("/address", authentication, fetchAddress);
 addressRoute.put("/address/:_id", authentication, updateAddress);
 addressRoute.delete("/address/:_id", authentication, deleteAddress);
 addressRoute.patch("/address/:_id", authentication, setDefaultAddress);
+addressRoute.get("/address/default/:userId", fetchDefaultAddress);
 
 export default addressRoute;
