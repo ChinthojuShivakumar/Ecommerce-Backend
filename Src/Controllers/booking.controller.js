@@ -21,10 +21,6 @@ export const createBooking = async (req, res) => {
         .json({ success: false, message: "user not found payment failed :(" });
     }
 
-    // Order ID
-    const orderId =
-      paymentMode === "cod" ? `Order_${Date.now()}` : `Order_${Date.now()}`;
-
     // Create bookings for each cart item
     if (paymentMode === "cod") {
       const booking = await bookingModal.create({ ...req.body });
@@ -61,7 +57,7 @@ export const createBooking = async (req, res) => {
       },
     };
 
-    console.log(payload);
+    // console.log(payload);
 
     const config = {
       headers: {
@@ -92,6 +88,20 @@ export const createBooking = async (req, res) => {
         { userId },
         { $set: { deleted: true, deletedAt: Date.now() } }
       );
+      const stockUpdatePromises = newBooking.products.map(
+        async ({ product, quantity }) => {
+          const foundProduct = await productModal.findById(product);
+          if (!foundProduct) throw new Error("Product not found");
+          if (foundProduct.stock < quantity) {
+            throw new Error(
+              `Insufficient stock for product ${foundProduct.name}`
+            );
+          }
+          foundProduct.stock -= quantity;
+          await foundProduct.save();
+        }
+      );
+      await Promise.all(stockUpdatePromises);
       return res.status(201).json({
         success: true,
         message: "Payment link created..!",
