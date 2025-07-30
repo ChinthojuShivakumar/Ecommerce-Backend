@@ -112,12 +112,18 @@ export const fetchProducts = async (req, res) => {
     if (price && price?.length === 2)
       filters.price = { $gte: price[0], $lte: price[1] };
 
+    // if (req.query.keyword) {
+    //   filters.$or = [
+    //     { name: { $regex: req.query.keyword, $options: "i" } },
+    //     { description: { $regex: req.query.keyword, $options: "i" } },
+    //   ];
+    // }
     if (req.query.keyword) {
-      filters.$or = [
-        { name: { $regex: req.query.keyword, $options: "i" } },
-        { description: { $regex: req.query.keyword, $options: "i" } },
-      ];
+      const regex = { $regex: req.query.keyword, $options: "i" };
+      filters.$or = [{ name: regex }, { description: regex }];
     }
+    if (req.query.category) filters.category = req.query.category;
+    // if (req.query.keyword) filters.name = req.query.keyword;
 
     const totalCategories = await productModal.countDocuments(filters);
     const totalPages = Math.ceil(totalCategories / limit);
