@@ -54,29 +54,54 @@ export const FetchCategoryList = async (req, res) => {
 
 export const UpdateCategory = async (req, res) => {
   try {
-    const FindCategory = await categoryModal.findOne({
-      _id: req.params._id,
+    const categoryId = req.params._id;
+
+    const existingCategory = await categoryModal.findOne({
+      _id: categoryId,
       deleted: false,
     });
-    if (!FindCategory) {
-      return res.status(400).json({ message: "category does not exist" });
-    }
-   
 
-    const FileName = req?.file?.filename;
-    const ImageURL = req.file
-      ? `${process.env.TEST_IMAGE_URL}/categories/${FileName}`
-      : req.body.image;
-    const UpdatedCategory = await categoryModal.updateOne(
-      { _id: req.params._id },
-      { $set: { ...req.body, image: ImageURL } }
+    if (!existingCategory) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Category does not exist" });
+    }
+
+    let newImageURL = existingCategory.image;
+
+    if (req?.file?.filename) {
+      const newFileName = req.file.filename;
+      newImageURL = `${process.env.TEST_IMAGE_URL}/categories/${newFileName}`;
+
+      // ✅ Safely delete old image
+      if (
+        existingCategory.image &&
+        existingCategory.image.includes("/categories/")
+      ) {
+        const oldFileName = existingCategory.image.split("/categories/")[1];
+        if (oldFileName) {
+          const oldFilePath = path.join("public/categories", oldFileName);
+          if (fs.existsSync(oldFilePath)) {
+            fs.unlinkSync(oldFilePath);
+            console.log(`🗑️ Deleted old category image: ${oldFilePath}`);
+          }
+        }
+      }
+    }
+
+    const updatedCategory = await categoryModal.updateOne(
+      { _id: categoryId },
+      { $set: { ...req.body, image: newImageURL } }
     );
 
-    return res
-      .status(202)
-      .json({ message: "category updated created", UpdatedCategory });
+    return res.status(202).json({
+      success: true,
+      message: "Category updated successfully",
+      updatedCategory,
+    });
   } catch (error) {
-    return res.status(500).json(error.message);
+    console.error("❌ Category update error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 
