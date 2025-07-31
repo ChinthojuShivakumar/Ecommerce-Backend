@@ -303,7 +303,13 @@ export const deleteProduct = async (req, res) => {
 
 export const fetchSingleProduct = async (req, res) => {
   try {
-    const findProduct = await productModal.findOne({ name: req.query.q });
+    const findProduct = await productModal
+      .findOne({ name: req.query.q, deleted: false })
+      .select("-deleted -deletedAt")
+      .populate({
+        path: "category",
+        select: "_id name",
+      });
     if (!findProduct) {
       return res
         .status(404)
