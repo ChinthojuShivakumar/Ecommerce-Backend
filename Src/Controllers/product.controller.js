@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import categoryModal from "../Modals/category.js";
 import reviewModal from "../Modals/review.js";
+import mongoose from "mongoose";
 dotenv.config();
 
 export const createProduct = async (req, res) => {
@@ -40,24 +41,97 @@ export const createProduct = async (req, res) => {
   }
 };
 
+// export const updateProduct = async (req, res) => {
+//   try {
+//     const findProduct = await productModal.findOne({
+//       _id: req.params._id,
+//       deleted: false,
+//     });
+//     if (!findProduct) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Product Does not Exist" });
+//     }
+//     const files = req.files;
+//     console.log(req.body);
+
+//     const convertToURL = files
+//       ? files?.map((file) => {
+//           const FileName = file.filename;
+//           return `${process.env.TEST_IMAGE_URL}/products/${FileName}`;
+//         })
+//       : req.body.image;
+//     if (
+//       req.body.specifications &&
+//       typeof req.body.specifications === "string"
+//     ) {
+//       req.body.specifications = JSON.parse(req.body.specifications);
+//     }
+
+//     if (
+//       req.body.specifications &&
+//       typeof req.body.specifications === "object"
+//     ) {
+//       req.body.specifications = new Map(
+//         Object.entries(req.body.specifications)
+//       );
+//     }
+//     const newProduct = await productModal.updateOne(
+//       { _id: req.params._id },
+//       { ...req.body, images: convertToURL }
+//     );
+
+//     return res.status(202).json({
+//       message: "product updated successfully",
+//       success: true,
+//       newProduct,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// };
+
 export const updateProduct = async (req, res) => {
   try {
-    const findProduct = await productModal.findOne({
-      _id: req.params._id,
+    const productId = req.params._id;
+
+    // Step 1: Find the existing product
+    const existingProduct = await productModal.findOne({
+      _id: productId,
       deleted: false,
     });
-    if (!findProduct) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Product Does not Exist" });
+
+    if (!existingProduct) {
+      return res.status(400).json({
+        success: false,
+        message: "Product does not exist",
+      });
     }
-    const files = req.files;
-    const convertToURL = files
-      ? files?.map((file) => {
-          const FileName = file.filename;
-          return `${process.env.TEST_IMAGE_URL}/products/${FileName}`;
-        })
-      : req.body.images;
+
+    const newFiles = req.files;
+
+    // Step 2: Handle image URLs
+    let updatedImageURLs = existingProduct.images; // default to old images
+
+    if (newFiles && newFiles.length > 0) {
+      // Construct new URLs
+      updatedImageURLs = newFiles.map((file) => {
+        return `${process.env.TEST_IMAGE_URL}/products/${file.filename}`;
+      });
+
+      // Delete old images from disk
+      for (const oldImg of existingProduct.images) {
+        const fileName = oldImg.split("/products/")[1];
+        if (fileName) {
+          const filePath = path.join("uploads/products", fileName);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath); // delete the file
+          }
+        }
+      }
+    }
+
+    // Step 3: Handle specifications field
     if (
       req.body.specifications &&
       typeof req.body.specifications === "string"
@@ -73,17 +147,24 @@ export const updateProduct = async (req, res) => {
         Object.entries(req.body.specifications)
       );
     }
-    const newProduct = await productModal.updateOne(
-      { _id: req.params._id },
-      { ...req.body, images: convertToURL }
+
+    // Step 4: Update the product
+    const updatedProduct = await productModal.findByIdAndUpdate(
+      productId,
+      {
+        ...req.body,
+        images: updatedImageURLs,
+      },
+      { new: true } // return updated document
     );
 
     return res.status(202).json({
-      message: "product updated successfully",
       success: true,
-      newProduct,
+      message: "Product updated successfully",
+      product: updatedProduct,
     });
   } catch (error) {
+    console.error("Update product error:", error);
     return res.status(500).json({ error: error.message });
   }
 };
@@ -96,10 +177,29 @@ export const fetchProducts = async (req, res) => {
     const filters = {
       deleted: false,
     };
+    // if (req.query.category) {
+    //   const findCategory = await categoryModal.findOne({
+    //     _id: req.query.category,
+    //   });
+    //   if (findCategory) {
+    //     filters.category = findCategory._id;
+    //   } else {
+    //     return res
+    //       .status(404)
+    //       .json({ message: "Category not found", success: false });
+    //   }
+    // }
     if (req.query.category) {
-      const findCategory = await categoryModal.findOne({
-        _id: req.query.category,
-      });
+      const isValidObjectId = mongoose.Types.ObjectId.isValid(
+        req.query.category
+      );
+
+      const findCategory = await categoryModal.findOne(
+        isValidObjectId
+          ? { _id: req.query.category }
+          : { name: req.query.category }
+      );
+
       if (findCategory) {
         filters.category = findCategory._id;
       } else {
@@ -122,7 +222,7 @@ export const fetchProducts = async (req, res) => {
       const regex = { $regex: req.query.keyword, $options: "i" };
       filters.$or = [{ name: regex }, { description: regex }];
     }
-    if (req.query.category) filters.category = req.query.category;
+    // if (req.query.category) filters.category = req.query.category;
     // if (req.query.keyword) filters.name = req.query.keyword;
 
     const totalCategories = await productModal.countDocuments(filters);
