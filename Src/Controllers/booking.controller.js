@@ -48,8 +48,8 @@ export const createBooking = async (req, res) => {
       link_currency: "INR",
       link_purpose: `order of ${req.body.products.length} items`,
       link_meta: {
-        return_url: "http://localhost:5173/orders",
-        notify_url: "http://localhost:5173",
+        return_url: `${process.env.FRONT_END_WEBSITE_URL}/orders`,
+        notify_url: `${process.env.FRONT_END_WEBSITE_URL}/`,
       },
       link_notify: {
         send_sms: false,

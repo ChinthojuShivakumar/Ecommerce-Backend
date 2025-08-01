@@ -3,6 +3,7 @@ import {
   createProduct,
   deleteProduct,
   fetchProducts,
+  fetchSingleProduct,
   updateProduct,
 } from "../Controllers/product.controller.js";
 import { FileUpload } from "../../Uploads/multercategory.js";
@@ -24,7 +25,8 @@ const FilePayload = {
 };
 
 productRoute.post("/product", FileUpload(FilePayload), createProduct);
-productRoute.get("/product", fetchProducts);
+productRoute.get("/products", fetchProducts);
+productRoute.get("/product", fetchSingleProduct);
 productRoute.put(
   "/product/:_id",
   FileUpload({

@@ -300,3 +300,27 @@ export const deleteProduct = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+export const fetchSingleProduct = async (req, res) => {
+  try {
+    const findProduct = await productModal
+      .findOne({ name: req.query.q, deleted: false })
+      .select("-deleted -deletedAt")
+      .populate({
+        path: "category",
+        select: "_id name",
+      });
+    if (!findProduct) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found :(" });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Product fetched successfully",
+      Product: findProduct,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
