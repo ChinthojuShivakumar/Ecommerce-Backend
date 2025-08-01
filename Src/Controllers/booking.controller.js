@@ -73,6 +73,8 @@ export const createBooking = async (req, res) => {
       config
     );
 
+   
+
     if (payLink.status == 200) {
       const productsWithStatus = req.body.products.map((item) => ({
         ...item,

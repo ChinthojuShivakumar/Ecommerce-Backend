@@ -23,7 +23,16 @@ connectDb();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(cors({ methods: ["GET", "POST", "PUT", "PATCH", "DELETE"] }));
+app.use(
+  cors({
+    origin:
+      process.env.Node_ENV === "production"
+        ? process.env.FRONT_END_WEBSITE_URL
+        : process.env.TEST_IMAGE_URL,
+
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  })
+);
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(
