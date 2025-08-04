@@ -41,6 +41,7 @@ const bookingSchema = new mongoose.Schema(
             "FAILED",
             "OUT FOR DELIVERY",
             "RETURNED",
+            "CANCELLED",
           ],
           default: "PENDING",
         },
