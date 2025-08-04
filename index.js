@@ -12,6 +12,7 @@ import bookingRoute from "./Src/Routes/booking.route.js";
 import addressRoute from "./Src/Routes/address.route.js";
 import cartRoute from "./Src/Routes/cart.route.js";
 import reviewRoute from "./Src/Routes/review.route.js";
+import "./trash.js"
 
 dotenv.config();
 
