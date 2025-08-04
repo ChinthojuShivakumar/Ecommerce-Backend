@@ -127,6 +127,7 @@ export const fetchDefaultAddress = async (req, res) => {
     const filters = {
       userId: req.params.userId,
       isDefault: true,
+      deleted: false,
     };
     const defaultAddress = await addressModal
       .findOne(filters)
