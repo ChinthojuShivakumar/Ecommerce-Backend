@@ -26,12 +26,16 @@ export const createProduct = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Product Already Exist" });
     }
+
+    let productImages = []
+
     const files = req.files;
+
     const convertToURL = await Promise.all(
       files.map(file => cloudinary.v2.uploader.upload(file.path, { folder: "products" }))
     )
 
-    productImages = uploadFiles.map(result => ({
+    productImages = convertToURL.map(result => ({
       publicId: result.public_id,
       url: result.secure_url
     }));
@@ -45,7 +49,7 @@ export const createProduct = async (req, res) => {
     ) {
       req.body.specifications = JSON.parse(req.body.specifications);
     }
-    const newProduct = new productModal({ ...req.body, images: convertToURL });
+    const newProduct = new productModal({ ...req.body, images: productImages });
     await newProduct.save();
     return res.status(201).json({
       message: "product added successfully",
@@ -165,7 +169,7 @@ export const updateProduct = async (req, res) => {
 
     productImages = uploadFiles.map(result => ({
       publicId: result.public_id,
-      imageUrl: result.secure_url
+      url: result.secure_url
     }));
 
 
@@ -191,7 +195,7 @@ export const updateProduct = async (req, res) => {
       productId,
       {
         ...req.body,
-        images: updatedImageURLs,
+        images: productImages,
       },
       { new: true } // return updated document
     );
