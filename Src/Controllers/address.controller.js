@@ -28,6 +28,9 @@ export const fetchAddress = async (req, res) => {
       deleted: false,
     };
     if (userId) filters.userId = userId;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "Address list not found on this user" })
+    }
     const addressList = await addressModal
       .find(filters)
       .sort({ isDefault: -1 });
