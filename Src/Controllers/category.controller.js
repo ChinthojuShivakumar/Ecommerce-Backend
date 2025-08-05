@@ -54,6 +54,7 @@ export const FetchCategoryList = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .select("-deleted -deletedAt");
+      categoryList.reverse()
     return res.status(200).json({
       message: "categories fetched successfully",
       succuss: true,
@@ -82,10 +83,6 @@ export const UpdateCategory = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Category does not exist" });
     }
-
-
-
-
 
     if (req.file) {
       let productImages;
