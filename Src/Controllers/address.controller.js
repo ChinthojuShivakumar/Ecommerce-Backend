@@ -3,8 +3,10 @@ import addressModal from "../Modals/address.js";
 export const createAddress = async (req, res) => {
   try {
 
-    const existingAddresses = await addressModal.find({ userId: req.body.userId });
+    const existingAddresses = await addressModal.find({ userId: req.body.userId, deleted: false });
     const isDefault = existingAddresses.length === 0;
+    // console.log(isDefault);
+    
 
     const create = new addressModal({ ...req.body, isDefault });
 
@@ -12,7 +14,7 @@ export const createAddress = async (req, res) => {
     return res.status(201).json({
       message: "address created successfully",
       success: true,
-      address,
+      address
     });
   } catch (error) {
     return res.status(500).json({ message: error });
