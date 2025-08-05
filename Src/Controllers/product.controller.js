@@ -355,8 +355,7 @@ const findProduct = await productModal.findOne({
     ...(isObjectId ? [{ _id: new mongoose.Types.ObjectId(queryValue) }] : []),
   ],
   deleted: false,
-});
-      .select("-deleted -deletedAt")
+}).select("-deleted -deletedAt")
       .populate({
         path: "category",
         select: "_id name",
