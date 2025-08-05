@@ -1,9 +1,16 @@
 import cron from "node-cron";
-import fs from "fs";
-import path from "path";
 import productModal from "./Src/Modals/products.js";
 import categoryModal from "./Src/Modals/category.js";
 import bookingModal from "./Src/Modals/bookings.js";
+import deletedMedia from "./Src/Modals/DeletedMedia.js";
+import cloudinary from "cloudinary";
+
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_KEY_SECRET,
+  secure: process.env.SECURE === 'true',
+});
 
 // Run daily at 00:00
 cron.schedule("0 0 * * *", async () => {
@@ -11,46 +18,64 @@ cron.schedule("0 0 * * *", async () => {
 
   const threshold = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days
 
-  // 🗑️ Clean up deleted product images
+  // 🧹 1. Clean up old deleted products
   const deletedProducts = await productModal.find({
     deleted: true,
     deletedAt: { $lte: threshold },
   });
 
-  for (const product of deletedProducts) {
-    if (product.images && product.images.length > 0) {
-      product.images.forEach((image) => {
-        const fileName = image.split("/products/")[1];
-        const filePath = path.join("public/products", fileName);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-          console.log(`🗑️ Deleted product image: ${filePath}`);
-        }
-      });
-    }
+  const deletedProductImages = deletedProducts.flatMap(prod =>
+    (prod.images || []).map(img => img.publicId)
+  ).filter(Boolean);
+
+  if (deletedProductImages.length) {
+    await cloudinary.v2.api.delete_resources(deletedProductImages, {
+      type: "upload",
+      resource_type: "image",
+    });
+
+    await deletedMedia.insertMany(
+      deletedProductImages.map(id => ({
+        publicId: id,
+        deletedAt: new Date(),
+      }))
+    );
   }
 
-  // 🗑️ Clean up deleted category images
+  // Optionally remove the product documents
+  await productModal.deleteMany({
+    _id: { $in: deletedProducts.map(p => p._id) },
+  });
+
+  // 🧹 2. Clean up old deleted categories
   const deletedCategories = await categoryModal.find({
     deleted: true,
     deletedAt: { $lte: threshold },
   });
 
-  for (const category of deletedCategories) {
-    if (category.image) {
-      const fileName = category.image.split("/categories/")[1];
-      const filePath = path.join("public/categories", fileName);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        console.log(`🗑️ Deleted category image: ${filePath}`);
-      }
-    }
+  const deletedCategoryImages = deletedCategories
+    .map(cat => cat.image?.publicId)
+    .filter(Boolean);
 
-    // Optionally delete the category document
-    await categoryModal.deleteOne({ _id: category._id });
+  if (deletedCategoryImages.length) {
+    await cloudinary.v2.api.delete_resources(deletedCategoryImages, {
+      type: "upload",
+      resource_type: "image",
+    });
+
+    await deletedMedia.insertMany(
+      deletedCategoryImages.map(id => ({
+        publicId: id,
+        deletedAt: new Date(),
+      }))
+    );
   }
 
-  // 🔁 Update FAILED bookings to EXPIRED
+  await categoryModal.deleteMany({
+    _id: { $in: deletedCategories.map(c => c._id) },
+  });
+
+  // 🔁 3. Update FAILED bookings → CANCELLED
   const failedBookings = await bookingModal.find({
     "products.status": "EXPIRED",
   });
@@ -72,11 +97,9 @@ cron.schedule("0 0 * * *", async () => {
 
     if (updated) {
       await booking.save();
-      console.log(`✅ Booking ${booking._id} updated from FAILED to EXPIRED`);
+      console.log(`✅ Booking ${booking._id} updated to CANCELLED`);
     }
   }
 
-  console.log(
-    `✅ Daily cleanup complete. Removed files for ${deletedProducts.length} products & ${deletedCategories.length} categories.`
-  );
+  console.log(`✅ Daily cleanup done. Products: ${deletedProducts.length}, Categories: ${deletedCategories.length}`);
 });
