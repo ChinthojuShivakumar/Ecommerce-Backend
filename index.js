@@ -21,8 +21,8 @@ const app = express();
 connectDb();
 
 // Get current directory name using import.meta.url
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 // app.use(
 //   cors({
@@ -64,11 +64,11 @@ app.use(
 
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json());
-app.use(
-  "/categories",
-  express.static(path.join(__dirname, "Public/categories"))
-);
-app.use("/products", express.static(path.join(__dirname, "Public/products")));
+// app.use(
+//   "/categories",
+//   express.static(path.join(__dirname, "Public/categories"))
+// );
+// app.use("/products", express.static(path.join(__dirname, "Public/products")));
 
 app.use("/v1", CategoryRoute);
 app.use("/v1", userRoutes);
