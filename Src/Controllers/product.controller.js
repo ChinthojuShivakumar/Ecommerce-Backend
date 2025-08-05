@@ -5,7 +5,15 @@ import path from "path";
 import categoryModal from "../Modals/category.js";
 import reviewModal from "../Modals/review.js";
 import mongoose from "mongoose";
+import cloudinary from "cloudinary"
 dotenv.config();
+
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_KEY_SECRET,
+  secure: process.env.SECURE === 'true',
+})
 
 export const createProduct = async (req, res) => {
   try {
@@ -19,10 +27,18 @@ export const createProduct = async (req, res) => {
         .json({ success: false, message: "Product Already Exist" });
     }
     const files = req.files;
-    const convertToURL = files.map((file) => {
-      const FileName = file.filename;
-      return `${process.env.TEST_IMAGE_URL}/products/${FileName}`;
-    });
+    const convertToURL = await Promise.all(
+      files.map(file => cloudinary.v2.uploader.upload(file.path, { folder: "products" }))
+    )
+
+    productImages = uploadFiles.map(result => ({
+      publicId: result.public_id,
+      url: result.secure_url
+    }));
+    // const convertToURL = files.map((file) => {
+    //   const FileName = file.filename;
+    //   return `${process.env.TEST_IMAGE_URL}/products/${FileName}`;
+    // });
     if (
       req.body.specifications &&
       typeof req.body.specifications === "string"
@@ -108,28 +124,50 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    const newFiles = req.files;
+    // const newFiles = req.files;
 
-    // Step 2: Handle image URLs
-    let updatedImageURLs = existingProduct.images; // default to old images
+    // // Step 2: Handle image URLs
+    // let updatedImageURLs = existingProduct.images; // default to old images
 
-    if (newFiles && newFiles.length > 0) {
-      // Construct new URLs
-      updatedImageURLs = newFiles.map((file) => {
-        return `${process.env.TEST_IMAGE_URL}/products/${file.filename}`;
-      });
+    // if (newFiles && newFiles.length > 0) {
+    //   // Construct new URLs
+    //   updatedImageURLs = newFiles.map((file) => {
+    //     return `${process.env.TEST_IMAGE_URL}/products/${file.filename}`;
+    //   });
 
-      // Delete old images from disk
-      for (const oldImg of existingProduct.images) {
-        const fileName = oldImg.split("/products/")[1];
-        if (fileName) {
-          const filePath = path.join("uploads/products", fileName);
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath); // delete the file
-          }
-        }
-      }
-    }
+    //   // Delete old images from disk
+    //   for (const oldImg of existingProduct.images) {
+    //     const fileName = oldImg.split("/products/")[1];
+    //     if (fileName) {
+    //       const filePath = path.join("uploads/products", fileName);
+    //       if (fs.existsSync(filePath)) {
+    //         fs.unlinkSync(filePath); // delete the file
+    //       }
+    //     }
+    //   }
+    // }
+
+    const exist = await productModal.findById(productId)
+
+
+    const publicIds = exist?.images?.map((img => img?.publicId))
+   
+    await cloudinary.v2.api.delete_resources(publicIds, { type: "upload", resource_type: "image" })
+
+    // cloudinary.v2.api.delete_resources([exist.public_id], { type: "upload", resource_type: "image" })
+
+
+    let productImages = []
+
+    const uploadFiles = await Promise.all(
+      req.files.map(file => cloudinary.v2.uploader.upload(file.path, { folder: "products" }))
+    )
+
+    productImages = uploadFiles.map(result => ({
+      publicId: result.public_id,
+      imageUrl: result.secure_url
+    }));
+
 
     // Step 3: Handle specifications field
     if (
