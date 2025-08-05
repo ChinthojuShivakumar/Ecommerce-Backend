@@ -6,6 +6,7 @@ import cartModal from "../Modals/cart.js";
 // import cartModal from "../Modals/cart.js";
 
 export const createBooking = async (req, res) => {
+  //  console.log(req.body);
   try {
     // const { totalPrice, productId, userId, paymentMode, quantity } = req.body;
     const { userId, paymentMode, finalPrice } = req.body;
@@ -73,6 +74,7 @@ export const createBooking = async (req, res) => {
       config
     );
 
+  
    
 
     if (payLink.status == 200) {
@@ -114,10 +116,10 @@ export const createBooking = async (req, res) => {
     }
   } catch (error) {
     if (error.response) {
-      console.error("Error Response:", error.response.data);
+      console.error("Error Response:", error.response);
       return res.status(500).json({ message: error });
     } else {
-      console.error("Unknown Error:", error.message);
+      console.error("Unknown Error:", error);
       return res.status(500).json({ message: "Unknown error", error });
     }
   }
