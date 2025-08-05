@@ -20,6 +20,9 @@ export const createCartList = async (req, res) => {
 export const fetchCartList = async (req, res) => {
   try {
     const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "Cart Items not found on this user" })
+    }
     const cartList = await cartModal
       .find({ deleted: false, userId: userId })
       .select("-deleted -deletedAt")
