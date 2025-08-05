@@ -2,8 +2,9 @@ import cron from "node-cron";
 import productModal from "./Src/Modals/products.js";
 import categoryModal from "./Src/Modals/category.js";
 import bookingModal from "./Src/Modals/bookings.js";
-import deletedMedia from "./Src/Modals/DeletedMedia.js";
+
 import cloudinary from "cloudinary";
+import deletedMedia from "./Src/Modals/deletedmedia.js";
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUD_NAME,
