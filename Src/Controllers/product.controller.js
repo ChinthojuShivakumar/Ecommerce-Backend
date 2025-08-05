@@ -345,8 +345,17 @@ export const deleteProduct = async (req, res) => {
 
 export const fetchSingleProduct = async (req, res) => {
   try {
-    const findProduct = await productModal
-      .findOne({ name: req.query.q, deleted: false })
+    const queryValue = req.query.q;
+
+const isObjectId = mongoose.Types.ObjectId.isValid(queryValue);
+
+const findProduct = await productModal.findOne({
+  $or: [
+    { name: queryValue },
+    ...(isObjectId ? [{ _id: new mongoose.Types.ObjectId(queryValue) }] : []),
+  ],
+  deleted: false,
+});
       .select("-deleted -deletedAt")
       .populate({
         path: "category",
