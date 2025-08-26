@@ -5,15 +5,15 @@ import path from "path";
 import categoryModal from "../Modals/category.js";
 import reviewModal from "../Modals/review.js";
 import mongoose from "mongoose";
-import cloudinary from "cloudinary"
+import cloudinary from "cloudinary";
 dotenv.config();
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
   api_secret: process.env.CLOUD_API_KEY_SECRET,
-  secure: process.env.SECURE === 'true',
-})
+  secure: process.env.SECURE === "true",
+});
 
 export const createProduct = async (req, res) => {
   try {
@@ -27,22 +27,21 @@ export const createProduct = async (req, res) => {
         .json({ success: false, message: "Product Already Exist" });
     }
 
-    let productImages = []
+    let productImages = [];
 
     const files = req.files;
 
     const convertToURL = await Promise.all(
-      files.map(file => cloudinary.v2.uploader.upload(file.path, { folder: "products" }))
-    )
+      files.map((file) =>
+        cloudinary.v2.uploader.upload(file.path, { folder: "products" })
+      )
+    );
 
-    productImages = convertToURL.map(result => ({
+    productImages = convertToURL.map((result) => ({
       publicId: result.public_id,
-      url: result.secure_url
+      url: result.secure_url,
     }));
-    // const convertToURL = files.map((file) => {
-    //   const FileName = file.filename;
-    //   return `${process.env.TEST_IMAGE_URL}/products/${FileName}`;
-    // });
+
     if (
       req.body.specifications &&
       typeof req.body.specifications === "string"
@@ -57,59 +56,11 @@ export const createProduct = async (req, res) => {
       newProduct,
     });
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({ error: error.message });
   }
 };
-
-// export const updateProduct = async (req, res) => {
-//   try {
-//     const findProduct = await productModal.findOne({
-//       _id: req.params._id,
-//       deleted: false,
-//     });
-//     if (!findProduct) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "Product Does not Exist" });
-//     }
-//     const files = req.files;
-//     console.log(req.body);
-
-//     const convertToURL = files
-//       ? files?.map((file) => {
-//           const FileName = file.filename;
-//           return `${process.env.TEST_IMAGE_URL}/products/${FileName}`;
-//         })
-//       : req.body.image;
-//     if (
-//       req.body.specifications &&
-//       typeof req.body.specifications === "string"
-//     ) {
-//       req.body.specifications = JSON.parse(req.body.specifications);
-//     }
-
-//     if (
-//       req.body.specifications &&
-//       typeof req.body.specifications === "object"
-//     ) {
-//       req.body.specifications = new Map(
-//         Object.entries(req.body.specifications)
-//       );
-//     }
-//     const newProduct = await productModal.updateOne(
-//       { _id: req.params._id },
-//       { ...req.body, images: convertToURL }
-//     );
-
-//     return res.status(202).json({
-//       message: "product updated successfully",
-//       success: true,
-//       newProduct,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// };
 
 export const updateProduct = async (req, res) => {
   try {
@@ -128,50 +79,48 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    // const newFiles = req.files;
+    const exist = await productModal.findById(productId);
 
-    // // Step 2: Handle image URLs
-    // let updatedImageURLs = existingProduct.images; // default to old images
+    const publicIds = exist?.images
+      ?.map((img) => img?.publicId)
+      .filter(Boolean);
 
-    // if (newFiles && newFiles.length > 0) {
-    //   // Construct new URLs
-    //   updatedImageURLs = newFiles.map((file) => {
-    //     return `${process.env.TEST_IMAGE_URL}/products/${file.filename}`;
-    //   });
-
-    //   // Delete old images from disk
-    //   for (const oldImg of existingProduct.images) {
-    //     const fileName = oldImg.split("/products/")[1];
-    //     if (fileName) {
-    //       const filePath = path.join("uploads/products", fileName);
-    //       if (fs.existsSync(filePath)) {
-    //         fs.unlinkSync(filePath); // delete the file
-    //       }
-    //     }
-    //   }
-    // }
-
-    const exist = await productModal.findById(productId)
-
-
-    const publicIds = exist?.images?.map((img => img?.publicId))
-   
-    await cloudinary.v2.api.delete_resources(publicIds, { type: "upload", resource_type: "image" })
+    if (publicIds && publicIds.length > 0) {
+      await cloudinary.v2.api.delete_resources(publicIds, {
+        type: "upload",
+        resource_type: "image",
+      });
+    }
 
     // cloudinary.v2.api.delete_resources([exist.public_id], { type: "upload", resource_type: "image" })
 
+    // let productImages = []
 
-    let productImages = []
+    // const uploadFiles = await Promise.all(
+    //   req.files.map(file => cloudinary.v2.uploader.upload(file.path, { folder: "products" }))
+    // )
 
-    const uploadFiles = await Promise.all(
-      req.files.map(file => cloudinary.v2.uploader.upload(file.path, { folder: "products" }))
-    )
+    // productImages = uploadFiles.map(result => ({
+    //   publicId: result.public_id,
+    //   url: result.secure_url
+    // }));
 
-    productImages = uploadFiles.map(result => ({
-      publicId: result.public_id,
-      url: result.secure_url
-    }));
+    let productImages = [];
 
+    if (req.files && req.files.length > 0) {
+      const uploadFiles = await Promise.all(
+        req.files.map((file) =>
+          cloudinary.v2.uploader.upload(file.path, { folder: "products" })
+        )
+      );
+
+      productImages = uploadFiles.map((result) => ({
+        publicId: result.public_id,
+        url: result.secure_url,
+      }));
+    } else {
+      productImages = exist.images; // keep old images if no new upload
+    }
 
     // Step 3: Handle specifications field
     if (
@@ -219,18 +168,7 @@ export const fetchProducts = async (req, res) => {
     const filters = {
       deleted: false,
     };
-    // if (req.query.category) {
-    //   const findCategory = await categoryModal.findOne({
-    //     _id: req.query.category,
-    //   });
-    //   if (findCategory) {
-    //     filters.category = findCategory._id;
-    //   } else {
-    //     return res
-    //       .status(404)
-    //       .json({ message: "Category not found", success: false });
-    //   }
-    // }
+
     if (req.query.category) {
       const isValidObjectId = mongoose.Types.ObjectId.isValid(
         req.query.category
@@ -254,18 +192,10 @@ export const fetchProducts = async (req, res) => {
     if (price && price?.length === 2)
       filters.price = { $gte: price[0], $lte: price[1] };
 
-    // if (req.query.keyword) {
-    //   filters.$or = [
-    //     { name: { $regex: req.query.keyword, $options: "i" } },
-    //     { description: { $regex: req.query.keyword, $options: "i" } },
-    //   ];
-    // }
     if (req.query.keyword) {
       const regex = { $regex: req.query.keyword, $options: "i" };
       filters.$or = [{ name: regex }, { description: regex }];
     }
-    // if (req.query.category) filters.category = req.query.category;
-    // if (req.query.keyword) filters.name = req.query.keyword;
 
     const totalCategories = await productModal.countDocuments(filters);
     const totalPages = Math.ceil(totalCategories / limit);
@@ -347,15 +277,19 @@ export const fetchSingleProduct = async (req, res) => {
   try {
     const queryValue = req.query.q;
 
-const isObjectId = mongoose.Types.ObjectId.isValid(queryValue);
+    const isObjectId = mongoose.Types.ObjectId.isValid(queryValue);
 
-const findProduct = await productModal.findOne({
-  $or: [
-    { name: queryValue },
-    ...(isObjectId ? [{ _id: new mongoose.Types.ObjectId(queryValue) }] : []),
-  ],
-  deleted: false,
-}).select("-deleted -deletedAt")
+    const findProduct = await productModal
+      .findOne({
+        $or: [
+          { name: queryValue },
+          ...(isObjectId
+            ? [{ _id: new mongoose.Types.ObjectId(queryValue) }]
+            : []),
+        ],
+        deleted: false,
+      })
+      .select("-deleted -deletedAt")
       .populate({
         path: "category",
         select: "_id name",

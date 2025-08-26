@@ -74,9 +74,6 @@ export const createBooking = async (req, res) => {
       config
     );
 
-
-
-
     if (payLink.status == 200) {
       const productsWithStatus = req.body.products.map((item) => ({
         ...item,
@@ -127,6 +124,8 @@ export const createBooking = async (req, res) => {
 
 export const fetchBookingList = async (req, res) => {
   try {
+    // console.log(req);
+
     const userId = req.query.userId;
     const page = parseInt(req.query.page);
     const limit = parseInt(req.query.limit);
@@ -142,8 +141,13 @@ export const fetchBookingList = async (req, res) => {
       const end = new Date(`${year + 1}-01-01T00:00:00.000Z`);
       filters.createdAt = { $gte: start, $lt: end };
     }
-    if (!userId) {
-      return res.status(400).json({ success: false, message: "Bookings not found on this user" })
+
+    console.log(req.user?.role, filters);
+
+    if (!["ADMIN", "SUPER ADMIN"].includes(req.user?.role) && !userId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Bookings not found on this user" });
     }
     const totalBookings = await bookingModal.countDocuments(filters);
     const totalPages = Math.ceil(totalBookings / limit);
@@ -250,8 +254,8 @@ export const verifyPayment = async (req, res) => {
         checkStatus?.data?.link_status == "PAID"
           ? "CONFIRMED"
           : checkStatus.data.link_status == "FAILED"
-            ? "FAILED"
-            : checkStatus.data.link_status;
+          ? "FAILED"
+          : checkStatus.data.link_status;
       const paymentData = await bookingModal.findOneAndUpdate(
         { orderId },
         {
