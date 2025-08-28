@@ -22,9 +22,30 @@ export const createBooking = async (req, res) => {
         .json({ success: false, message: "user not found payment failed :(" });
     }
 
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const todayStr = `${year}${month}${day}`;
+
+    // Step 2: Get today's range
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+
+    // Step 3: Count how many bookings today
+    const todayCount = await bookingModal.countDocuments({
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    // Step 4: Generate OD Id
+    const odId = `OD-${todayStr}-${String(todayCount + 1).padStart(4, "0")}`;
+
     // Create bookings for each cart item
     if (paymentMode === "cod") {
-      const booking = await bookingModal.create({ ...req.body });
+      const booking = await bookingModal.create({
+        ...req.body,
+        bookingId: odId,
+      });
       await cartModal.updateMany(
         { userId },
         { $set: { deleted: true, deletedAt: Date.now() } }
@@ -83,6 +104,7 @@ export const createBooking = async (req, res) => {
         ...req.body,
         orderId: payLink.data.link_id,
         products: productsWithStatus,
+        bookingId: odId,
       });
       await newBooking.save();
       await cartModal.updateMany(
@@ -166,6 +188,11 @@ export const fetchBookingList = async (req, res) => {
           path: "products.product", // 🔥 populate each product inside products array
           model: "products", // 👈 replace with your actual Product model name
           select: "images name _id",
+        },
+        {
+          path: "products.review", // 🔥 populate each review inside products array
+          model: "reviews", // 👈 replace with your actual Product model name
+          select: "_id comment rating",
         },
         {
           path: "addressId",

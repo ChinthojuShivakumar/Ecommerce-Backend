@@ -49,12 +49,19 @@ export const createReview = async (req, res) => {
       }
     );
 
+    await bookingModal.updateOne(
+      { _id: req.body.orderId, "products.product": productId },
+      { $set: { "products.$.review": review._id } }
+    );
+
     return res.status(201).json({
       success: true,
       message: "review created successfully :)",
       review,
     });
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({ message: error, success: false });
   }
 };
@@ -78,6 +85,7 @@ export const fetchReviewsList = async (req, res) => {
       .populate([
         { path: "userId", select: "_id name" },
         { path: "productId", select: "-_id name" },
+        { path: "orderId", select: "-_id name bookingId" },
       ]);
     return res.status(200).json({
       message: "review list fetched successfully :)",
