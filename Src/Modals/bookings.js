@@ -7,7 +7,10 @@ const bookingSchema = new mongoose.Schema(
     //   required: true,
     //   ref: "products",
     // },
-
+    bookingId: {
+      type: String,
+      required: true,
+    },
     products: [
       {
         product: {
@@ -59,6 +62,11 @@ const bookingSchema = new mongoose.Schema(
         },
         returnedAt: {
           type: Date,
+          default: null,
+        },
+        review: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "reviews",
           default: null,
         },
       },

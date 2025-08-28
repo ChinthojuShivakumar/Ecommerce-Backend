@@ -12,7 +12,7 @@ import bookingRoute from "./Src/Routes/booking.route.js";
 import addressRoute from "./Src/Routes/address.route.js";
 import cartRoute from "./Src/Routes/cart.route.js";
 import reviewRoute from "./Src/Routes/review.route.js";
-import "./trash.js"
+import "./trash.js";
 
 dotenv.config();
 
@@ -61,6 +61,10 @@ app.use(
 
 // Allow preflight requests for all routes
 // app.options("/*", cors());
+
+app.get("/v1/", (req, res) => {
+  return res.status(200).json({ success: true, message: "Backend is Running" });
+});
 
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json());
