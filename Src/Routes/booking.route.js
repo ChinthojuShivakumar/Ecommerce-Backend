@@ -3,6 +3,7 @@ import {
   createBooking,
   deleteBooking,
   fetchBookingList,
+  getBookedProducts,
   updateBooking,
   updateStatus,
   verifyPayment,
@@ -18,5 +19,6 @@ bookingRoute.delete("/booking/:_id", authentication, deleteBooking);
 
 bookingRoute.post("/verify-payment", authentication, verifyPayment);
 bookingRoute.patch("/booking", authentication, updateStatus);
+bookingRoute.get("/products/most", getBookedProducts);
 
 export default bookingRoute;
