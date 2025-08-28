@@ -359,3 +359,56 @@ export const updateStatus = async (req, res) => {
     return res.status(500).json({ message: error, success: false });
   }
 };
+
+
+
+// Get most or least booked products
+export const getBookedProducts = async (req, res) => {
+  try {
+    const type = req.query.type || "most"; // "most" or "least"
+    const limit = parseInt(req.query.limit) || 10; // number of products to return
+
+    const pipeline = [
+      { $unwind: "$products" },
+      { $match: { deleted: false } },
+
+      // Group by productId to remove duplicates & count bookings
+      {
+        $group: {
+          _id: "$products.product",
+          totalBookings: { $sum: "$products.quantity" },
+        },
+      },
+
+      // Lookup product details
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "productDetails",
+        },
+      },
+      { $unwind: "$productDetails" },
+
+      // Sort by booking count (most booked first)
+      { $sort: { totalBookings: -1 } },
+
+      // Replace root with only product details
+      { $replaceRoot: { newRoot: "$productDetails" } },
+
+      // Limit the number of products
+      { $limit: limit },
+    ];
+
+    const products = await bookingModal.aggregate(pipeline);
+
+    return res.status(200).json({
+      success: true,
+      type,
+      products,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

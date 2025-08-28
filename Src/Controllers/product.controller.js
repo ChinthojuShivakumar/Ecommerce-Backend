@@ -308,3 +308,27 @@ export const fetchSingleProduct = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+export const getNewProducts = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10; // default 10
+    const days = parseInt(req.query.days) || 15;   // default last 15 days
+
+    // Get date X days ago
+    const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const products = await productModal.find({
+      deleted: false,
+      createdAt: { $gte: fromDate }  // only recently added
+    })
+    .sort({ createdAt: -1 })        // newest first
+    .limit(limit);
+
+    return res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
