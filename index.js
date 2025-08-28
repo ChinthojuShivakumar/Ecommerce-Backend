@@ -62,7 +62,7 @@ app.use(
 // Allow preflight requests for all routes
 // app.options("/*", cors());
 
-app.use("/", (req, res) => {
+app.get("/v1/", (req, res) => {
   return res.status(200).json({ success: true, message: "Backend is Running" });
 });
 
