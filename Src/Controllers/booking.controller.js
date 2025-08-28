@@ -66,7 +66,7 @@ export const createBooking = async (req, res) => {
       },
       thank_you_msg: "Thank you for your payment!",
       link_expiry_time: expirationTime,
-      link_amount: parseFloat(finalPrice.toFixed(2)),
+      link_amount: finalPrice,
       link_currency: "INR",
       link_purpose: `order of ${req.body.products.length} items`,
       link_meta: {
